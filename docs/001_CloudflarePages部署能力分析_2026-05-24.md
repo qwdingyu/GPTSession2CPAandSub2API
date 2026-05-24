@@ -15,7 +15,7 @@
 原因：
 
 - 项目是纯静态页面。
-- 入口文件已经存在：`docs/index.html`。
+- 入口文件已经存在：`src/index.html`。
 - 静态资源相对路径正确：`./favicon.svg`。
 - 没有 `package.json`、构建依赖、服务端入口或环境变量。
 - 页面没有 `fetch()`、`XMLHttpRequest`、`localStorage`、`sessionStorage`、`indexedDB` 或 `sendBeacon`。
@@ -27,7 +27,7 @@
 Framework preset: None
 Production branch: main
 Build command: exit 0
-Build output directory: docs
+Build output directory: src
 Root directory: 留空
 Environment variables: 不需要
 ```
@@ -36,7 +36,7 @@ Environment variables: 不需要
 
 ## 已做的试点准备
 
-新增 `docs/_headers`，由 Cloudflare Pages 在部署时解析为响应头。
+新增 `src/_headers`，由 Cloudflare Pages 在部署时解析为响应头。
 
 目的：
 
@@ -48,25 +48,27 @@ Environment variables: 不需要
 
 ## 排查过程
 
-1. 检查仓库文件，确认只有 `README.md`、`LICENSE`、`.gitignore` 和 `docs/` 静态文件。
+1. 检查仓库文件，确认项目是纯静态文件，生产页面位于 `src/`，项目文档位于 `docs/`。
 2. 检查 Git 状态，确认开始前工作区干净。
 3. 阅读 `README.md`，确认项目定位是纯前端单页面工具。
-4. 阅读 `docs/index.html`，确认入口、资源引用和交互逻辑都在同一个静态 HTML 内。
+4. 阅读 `src/index.html`，确认入口、资源引用和交互逻辑都在同一个静态 HTML 内。
 5. 搜索潜在运行时依赖和外发能力：`fetch()`、`XMLHttpRequest`、本地存储、IndexedDB、sendBeacon、模块导入、服务端函数。
 6. 检查是否存在 `package.json`、`wrangler.toml`、`_headers`、`_redirects`、独立 JS/TS 文件。
 7. 查询 Cloudflare Pages 官方文档，确认无框架静态站点推荐 `exit 0` 和自定义 Build output directory，且 `_headers` 应放在输出目录。
 
 ## 风险与建议
 
-### 风险 1：`docs/` 同时是站点根目录和文档目录
+### 风险 1：站点源码和项目文档混放
 
-当前 `docs/` 会作为 Cloudflare Pages 的公开输出目录，因此放在 `docs/` 下的 Markdown 分析文档也会被公开访问。
+状态：已修正。
+
+站点公开输出目录已经从 `docs/` 调整为 `src/`。这样 Cloudflare Pages 只发布 `src/index.html`、`src/favicon.svg` 和 `src/_headers`，项目分析文档继续保留在 `docs/`。
 
 建议：
 
-- 本项目当前没有秘密内容，可以接受。
-- 后续不要把内部密钥、账号信息、部署 token、私有排查日志写入 `docs/`。
-- 如果未来文档增多且不希望公开，建议把站点目录迁移为 `public/`，文档继续放 `docs/`。
+- Cloudflare Pages 的 Build output directory 必须改为 `src`。
+- 后续不要再把生产页面放回 `docs/`。
+- `docs/` 仍然不能写入真实 token、密钥、账号凭证或私有排查日志，因为 GitHub 仓库成员仍可看到这些内容。
 
 ### 风险 2：页面含内联 CSS 和内联 JS
 
@@ -77,9 +79,9 @@ Environment variables: 不需要
 - 试点阶段接受该取舍。
 - 如果后续要进一步收紧 CSP，再把 CSS/JS 拆成独立文件并使用 hash 或 nonce。
 
-### 风险 3：GitHub CLI 当前本地授权异常
+### 风险 3：GitHub CLI 授权状态
 
-本机 `gh auth status` 显示账号 token 无效。Cloudflare Pages Git 集成可以在 Cloudflare 控制台完成，但 AI 后续如果要接管 PR、checks 和部署闭环，需要重新授权 GitHub CLI 或配置 GitHub MCP。
+初次分析时本机 `gh auth status` 显示账号 token 无效；后续已经完成重新授权，并成功删除重建 GitHub 仓库、推送 main 分支。AI 后续可以继续用 GitHub CLI 接管仓库创建、提交推送、PR、workflow 和检查状态。
 
 建议：
 
@@ -93,7 +95,7 @@ rtk gh auth login -h github.com
 - `rtk rg --files`：确认项目文件很少，适合静态部署。
 - `rtk rg` 搜索运行时依赖：未发现网络请求、本地存储或服务端入口。
 - `rtk du -sh docs`：当前静态输出目录约 60K。
-- `rtk xmllint --html --noout docs/index.html`：不作为有效验收，因为该工具对 HTML5 语义标签、SVG 和内联 JavaScript 产生误报。
+- `rtk xmllint --html --noout src/index.html`：不作为有效验收，因为该工具对 HTML5 语义标签、SVG 和内联 JavaScript 产生误报。
 
 ## 下一步试点步骤
 
@@ -106,7 +108,7 @@ rtk gh auth login -h github.com
 
 ```text
 Build command: exit 0
-Build output directory: docs
+Build output directory: src
 Production branch: main
 ```
 

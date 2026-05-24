@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="deployment-smoke-marker" content="workflow-smoke-2026-05-24-002" />
-    <title>ChatGPT Session -> CPA / sub2api / Cockpit</title>
+    <meta name="deployment-smoke-marker" content="workflow-smoke-2026-05-24-003" />
+    <title>ChatGPT Session -> CPA / sub2api / Cockpit / Codex</title>
     <meta name="theme-color" content="#24505a" />
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any" />
     <style>
@@ -159,8 +159,8 @@
 
       .segmented {
         display: inline-grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        width: min(480px, 100%);
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        width: min(620px, 100%);
         padding: 4px;
         border: 1px solid var(--line);
         border-radius: var(--radius);
@@ -628,6 +628,7 @@
             <span>sub2api</span>
             <span>Cockpit</span>
             <span>9router</span>
+            <span>Codex auth.json</span>
           </div>
         </div>
         <div class="meta-row" aria-label="处理方式">
@@ -636,7 +637,7 @@
           <span class="meta-chip">不写入存储</span>
           <a
             class="meta-chip github-link"
-            href="https://github.com/yynxxxxx/GPTSession2CPAandSub2API"
+            href="https://github.com/qwdingyu/GPTSession2CPAandSub2API"
             target="_blank"
             rel="noreferrer"
             aria-label="本页面代码开源"
@@ -655,6 +656,7 @@
           <button type="button" data-format="cpa" aria-pressed="false">CPA</button>
           <button type="button" data-format="cockpit" aria-pressed="false">Cockpit</button>
           <button type="button" data-format="9router" aria-pressed="false">9router</button>
+          <button type="button" data-format="codexAuth" aria-pressed="false">Codex</button>
         </div>
         <div class="actions">
           <button class="button button-secondary" id="copy-output" type="button" disabled>复制输出</button>
@@ -688,7 +690,7 @@
               </span>
               <span class="telegram-copy">
                 <strong>加入 Telegram 群免费获取 GPT 撸羊毛信息</strong>
-                <span>本工具主要针对 Plus 账号适用，Free 账号即使转换了也没有权限调用 GPT 模型。GoPay 拉闸了，没法每天发 Plus 了；加入 Telegram 群免费获取 GPT 撸羊毛信息，然后配合本工具导入 CPA or Sub2API 使用。</span>
+                <span>Codex auth.json 模式可为 Free 账号生成 Codex CLI 登录配置；CPA、sub2api、Cockpit 和 9router 的实际模型可用性仍取决于账号当前权益。敏感 token 只在本页本地解析，请勿分享给他人。</span>
               </span>
               <span class="telegram-action">加入群组</span>
             </a>
@@ -716,7 +718,7 @@
           </div>
           <div class="panel-body">
             <p class="notice" id="cpa-notice">
-              ChatGPT Web session 一般没有 `refresh_token`；缺少真实 `id_token` 时会构造 CPA/Cockpit 可解析的占位 claims，实际调用仍依赖 access token。
+              ChatGPT Web session 一般没有 `refresh_token`；CPA/Cockpit 缺少真实 `id_token` 时会构造可解析的占位 claims。Codex auth.json 模式复用 ChatGPT Web access token，不按 Free/Plus 做转换门槛，实际可用模型取决于账号当前权益。
             </p>
             <div class="summary" aria-label="转换统计">
               <div class="stat">
@@ -770,6 +772,7 @@
           cpa: "CPA",
           cockpit: "Cockpit",
           "9router": "9router",
+          codexAuth: "Codex auth.json",
         };
 
         const state = {
@@ -1247,6 +1250,17 @@
             expired: expiresAt,
             account_note: firstNonEmpty(record.account_note, record.accountInfo, record.account_info, record.note, record.notes, record.remark),
           };
+          const codexTokens = Object.fromEntries(Object.entries({
+            id_token: accessToken,
+            access_token: accessToken,
+            refresh_token: refreshToken || "",
+            account_id: accountId,
+          }).filter(([, value]) => value !== undefined && value !== null && value !== ""));
+          const codexAuth = {
+            OPENAI_API_KEY: null,
+            tokens: codexTokens,
+            last_refresh: exportedAt,
+          };
 
           const sub2apiAccount = stripUnavailable({
             name: firstNonEmpty(name, email, sourceName, "ChatGPT Account"),
@@ -1305,6 +1319,7 @@
             expiresAt,
             cpa,
             cockpit,
+            codexAuth,
             nineRouter,
             sub2apiAccount,
           };
@@ -1340,6 +1355,12 @@
             return state.converted.length === 1
               ? state.converted[0].nineRouter
               : state.converted.map((item) => item.nineRouter);
+          }
+
+          if (state.format === "codexAuth") {
+            return state.converted.length === 1
+              ? state.converted[0].codexAuth
+              : state.converted.map((item) => item.codexAuth);
           }
 
           return buildSub2apiDocument(state.converted, now);
@@ -1403,7 +1424,7 @@
           elements.statErrors.textContent = String(state.skipped.length);
           elements.statFormat.textContent = OUTPUT_LABELS[state.format];
           elements.outputSubtitle.textContent = `当前输出为 ${OUTPUT_LABELS[state.format]} 导入 JSON。`;
-          elements.cpaNotice.style.display = state.format === "cpa" || state.format === "cockpit" ? "block" : "none";
+          elements.cpaNotice.style.display = state.format === "cpa" || state.format === "cockpit" || state.format === "codexAuth" ? "block" : "none";
 
           renderAccounts();
           renderIssues();

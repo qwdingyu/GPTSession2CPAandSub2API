@@ -68,7 +68,7 @@ rtk git log -3 --oneline
 当前项目的生产页面是：
 
 ```text
-docs/index.html
+src/index.html
 ```
 
 修改它会直接影响线上页面。
@@ -92,7 +92,7 @@ docs/
 安全响应头在：
 
 ```text
-docs/_headers
+src/_headers
 ```
 
 它必须保留：
@@ -109,17 +109,17 @@ connect-src 'none'
 
 ```bash
 rtk git diff --check
-rtk rg -n "fetch\\(|XMLHttpRequest|localStorage|sessionStorage|indexedDB|sendBeacon" docs/index.html
-rtk rg -n "connect-src 'none'|Content-Security-Policy" docs/_headers
+rtk rg -n "fetch\\(|XMLHttpRequest|localStorage|sessionStorage|indexedDB|sendBeacon" src/index.html
+rtk rg -n "connect-src 'none'|Content-Security-Policy" src/_headers
 ```
 
 预期：
 
 - `git diff --check` 无输出。
-- `docs/index.html` 不出现主动网络请求或本地持久化存储。
-- `docs/_headers` 保留 CSP。
+- `src/index.html` 不出现主动网络请求或本地持久化存储。
+- `src/_headers` 保留 CSP。
 
-说明：`xmllint --html docs/index.html` 不作为本项目验收标准，因为它会对 HTML5 语义标签、SVG 和内联 JavaScript 产生误报。
+说明：`xmllint --html src/index.html` 不作为本项目验收标准，因为它会对 HTML5 语义标签、SVG 和内联 JavaScript 产生误报。
 
 ## 提交流程
 
@@ -179,16 +179,16 @@ connect-src 'none'
 
 ### 2. 验证部署版本
 
-本次流程测试在 `docs/index.html` 中加入了不可见探针：
+本次流程测试在 `src/index.html` 中加入了不可见探针：
 
 ```text
-workflow-smoke-2026-05-24-002
+workflow-smoke-2026-05-24-003
 ```
 
 推送后执行：
 
 ```bash
-rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "workflow-smoke-2026-05-24-002"
+rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "workflow-smoke-2026-05-24-003"
 ```
 
 如果能匹配，说明 Cloudflare 已经部署了包含本次提交的新版本。
@@ -245,9 +245,9 @@ rtk git remote -v
 先检查：
 
 - Build command 是否仍是 `exit 0`。
-- Build output directory 是否仍是 `docs`。
-- `docs/index.html` 是否存在。
-- `docs/_headers` 是否格式错误。
+- Build output directory 是否仍是 `src`。
+- `src/index.html` 是否存在。
+- `src/_headers` 是否格式错误。
 - Cloudflare GitHub App 是否有仓库权限。
 
 不要立刻改成 Wrangler 直接上传。先修主链路。
@@ -277,7 +277,7 @@ rtk npx wrangler pages deployment list --project-name gptsession2cpaandsub2api
 直接上传只作为兜底：
 
 ```bash
-rtk npx wrangler pages deploy docs --project-name gptsession2cpaandsub2api
+rtk npx wrangler pages deploy src --project-name gptsession2cpaandsub2api
 ```
 
 使用兜底后必须记录：
@@ -307,10 +307,10 @@ rtk git push origin main
 本次提交会同时做两件事：
 
 1. 新增本文档。
-2. 在 `docs/index.html` 增加不可见部署探针：
+2. 在 `src/index.html` 增加不可见部署探针：
 
 ```text
-workflow-smoke-2026-05-24-002
+workflow-smoke-2026-05-24-003
 ```
 
 推送后用线上 curl 搜索该探针。如果能搜到，即证明：
@@ -358,7 +358,17 @@ rtk curl -I https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
 本段记录本身会触发第二次提交和部署。第二次验证使用：
 
 ```text
-workflow-smoke-2026-05-24-002
+workflow-smoke-2026-05-24-003
+
+### 第三次验证
+
+本次结构迁移把站点输出目录从 `docs/` 改为 `src/`，第三次验证使用：
+
+```text
+workflow-smoke-2026-05-24-003
+```
+
+注意：推送本提交前，Cloudflare Pages 的 Build output directory 必须先改为 `src`。如果仍是 `docs`，线上不会发布 `src/index.html`。
 ```
 
 如果线上首页能返回该探针，说明记录实测结果的提交也完成了部署闭环。

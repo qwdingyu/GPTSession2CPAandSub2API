@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gptsession2cpaandsub2api",
+  "compatibility_date": "2026-05-24",
+  "assets": {
+    "directory": "./src",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page"
+  }
+}

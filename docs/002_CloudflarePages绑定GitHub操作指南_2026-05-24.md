@@ -24,7 +24,7 @@ GitHub 私有仓库 -> Cloudflare Pages Git integration -> main 分支自动生�
 1. 首次绑定 GitHub：用 Cloudflare Dashboard。
 2. 日常发布：用 `git push` 触发 Pages 自动部署。
 3. 日常检查：用 Cloudflare Dashboard、Cloudflare API 或 Wrangler。
-4. 兜底发布：用 `wrangler pages deploy docs --project-name <项目名>`，但不要把它作为主路径。
+4. 兜底发布：用 `wrangler pages deploy src --project-name <项目名>`，但不要把它作为主路径。
 
 ## 当前项目部署配置
 
@@ -46,16 +46,16 @@ Cloudflare Pages 推荐配置：
 Framework preset: None
 Production branch: main
 Build command: exit 0
-Build output directory: docs
+Build output directory: src
 Root directory: 留空
 Environment variables: 不需要
 ```
 
 说明：
 
-- `docs/index.html` 是站点入口。
-- `docs/favicon.svg` 是页面图标。
-- `docs/_headers` 会被 Cloudflare Pages 作为响应头配置读取。
+- `src/index.html` 是站点入口。
+- `src/favicon.svg` 是页面图标。
+- `src/_headers` 会被 Cloudflare Pages 作为响应头配置读取。
 - 当前项目没有 `package.json`，不需要安装依赖。
 - 当前项目没有构建产物生成步骤，因此 `Build command` 使用 `exit 0`。
 
@@ -129,7 +129,7 @@ Project name: gptsession2cpaandsub2api
 Production branch: main
 Framework preset: None
 Build command: exit 0
-Build output directory: docs
+Build output directory: src
 Root directory: 留空
 ```
 
@@ -223,7 +223,7 @@ Cloudflare 的主 CLI 是 `wrangler`，不是 `gh` 这样的 GitHub 专用工具
 rtk npx wrangler login
 rtk npx wrangler pages project list
 rtk npx wrangler pages project create gptsession2cpaandsub2api --production-branch main
-rtk npx wrangler pages deploy docs --project-name gptsession2cpaandsub2api
+rtk npx wrangler pages deploy src --project-name gptsession2cpaandsub2api
 ```
 
 但要注意：
@@ -287,7 +287,7 @@ rtk npx wrangler pages project list
 如果 GitHub 集成部署失败，而本地文件确认没问题，可以临时直接上传：
 
 ```bash
-rtk npx wrangler pages deploy docs --project-name gptsession2cpaandsub2api
+rtk npx wrangler pages deploy src --project-name gptsession2cpaandsub2api
 ```
 
 兜底上传后必须在 `docs/` 记录原因，不能让兜底路径变成长期主路径。
@@ -298,13 +298,15 @@ rtk npx wrangler pages deploy docs --project-name gptsession2cpaandsub2api
 
 当前 GitHub 仓库是 private。Cloudflare GitHub App 必须被允许访问该私有仓库，否则 Pages 创建页面看不到它。
 
-### 2. `docs/` 是公开站点目录
+### 2. `src/` 是公开站点目录，`docs/` 只放项目文档
 
-当前项目把 `docs/` 同时作为项目文档目录和 Pages 输出目录。
+当前项目已经把生产页面迁移到 `src/`，Cloudflare Pages 的 Build output directory 应配置为：
 
-这意味着 `docs/*.md` 会被公开访问。
+```text
+src
+```
 
-当前这些文档不包含密钥，可以接受。后续严禁把以下内容写入 `docs/`：
+这意味着 `docs/*.md` 不再作为站点静态产物发布。后续严禁把以下内容写入 `src/` 或 `docs/`：
 
 - GitHub token。
 - Cloudflare API token。
@@ -314,14 +316,14 @@ rtk npx wrangler pages deploy docs --project-name gptsession2cpaandsub2api
 - 真实账号凭证。
 - 私有排查日志。
 
-如果以后不希望公开项目文档，应把站点输出目录迁移到 `public/`，并在 Cloudflare Pages 中把 Build output directory 改成 `public`。
+`src/` 只放线上需要访问的 HTML、图标和 Cloudflare Pages 配置文件。项目分析、踩坑记录、流程说明继续放 `docs/`。
 
 ### 3. `_headers` 必须在输出目录内
 
-当前输出目录是 `docs`，所以安全头文件必须放在：
+当前输出目录是 `src`，所以安全头文件必须放在：
 
 ```text
-docs/_headers
+src/_headers
 ```
 
 不要放到仓库根目录，否则 Cloudflare Pages 不会在当前配置下读取它。
