@@ -4,6 +4,8 @@
 
 ## 在线使用
 
+### [**Cloudflare Pages 试点地址**](https://gptsession2cpaandsub2api.mailforwdy.workers.dev/)
+
 ### [**》》 点我直接使用 《《**](https://json.chatai.codes/)
 
 ## 使用提示
