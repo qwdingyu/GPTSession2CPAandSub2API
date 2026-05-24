@@ -182,13 +182,13 @@ connect-src 'none'
 本次流程测试在 `docs/index.html` 中加入了不可见探针：
 
 ```text
-workflow-smoke-2026-05-24-001
+workflow-smoke-2026-05-24-002
 ```
 
 推送后执行：
 
 ```bash
-rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "workflow-smoke-2026-05-24-001"
+rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "workflow-smoke-2026-05-24-002"
 ```
 
 如果能匹配，说明 Cloudflare 已经部署了包含本次提交的新版本。
@@ -310,7 +310,7 @@ rtk git push origin main
 2. 在 `docs/index.html` 增加不可见部署探针：
 
 ```text
-workflow-smoke-2026-05-24-001
+workflow-smoke-2026-05-24-002
 ```
 
 推送后用线上 curl 搜索该探针。如果能搜到，即证明：
@@ -320,6 +320,48 @@ workflow-smoke-2026-05-24-001
 ```
 
 闭环成立。
+
+## 本次实测结果
+
+### 第一次验证
+
+提交：
+
+```text
+bc1a5a7 固化 Cloudflare Pages 上线闭环
+```
+
+验证命令：
+
+```bash
+rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "workflow-smoke-2026-05-24-001"
+rtk curl -I https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
+```
+
+结果：
+
+- 线上首页成功返回 `workflow-smoke-2026-05-24-001`。
+- 响应状态为 `HTTP/2 200`。
+- 响应头包含 `content-security-policy`。
+- CSP 保留 `connect-src 'none'`。
+
+结论：
+
+```text
+本地修改 -> Git commit -> git push origin main -> Cloudflare 自动部署 -> 线上 curl 验证
+```
+
+这条主链路已跑通。
+
+### 第二次验证
+
+本段记录本身会触发第二次提交和部署。第二次验证使用：
+
+```text
+workflow-smoke-2026-05-24-002
+```
+
+如果线上首页能返回该探针，说明记录实测结果的提交也完成了部署闭环。
 
 ## 后续改进
 
