@@ -182,6 +182,39 @@ rtk curl -I https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
 - 响应头包含 `content-security-policy`。
 - CSP 包含 `connect-src 'none'`。
 
+## 本次实测结果
+
+提交：
+
+```text
+26f6a37 调整 Workers 部署目录并补齐 Codex 登录输出
+```
+
+操作：
+
+```bash
+rtk git push origin main
+rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "workflow-smoke-2026-05-24-003"
+rtk curl -I https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
+```
+
+结果：
+
+- GitHub push 成功。
+- 线上 Worker 立即返回 `workflow-smoke-2026-05-24-003`。
+- 响应状态为 `HTTP/2 200`。
+- 响应头包含 `content-security-policy`。
+- CSP 保留 `connect-src 'none'`。
+- 本地分支与 `origin/main` 同步。
+
+结论：
+
+```text
+本地修改 -> GitHub main -> Cloudflare Workers 自动更新 -> 线上验证
+```
+
+当前链路已经跑通。后续主线按 Workers 自动部署执行，不再按 Pages 项目配置推进。
+
 ## 命令行兜底
 
 如果 Workers Builds 暂未连接，或者 Cloudflare 构建失败，可以临时用 Wrangler 直接部署：
