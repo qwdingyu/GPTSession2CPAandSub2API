@@ -171,8 +171,10 @@ Cloudflare Workers Builds 连接成功后，`git push origin main` 会触发自�
 推送后检查：
 
 ```bash
-rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "workflow-smoke-2026-05-24-003"
+rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "custom-domain-smoke"
 rtk curl -I https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
+rtk curl -sS https://ai.eforge.xyz/ | rtk rg "custom-domain-smoke"
+rtk curl -I https://ai.eforge.xyz/
 ```
 
 必须满足：
@@ -181,6 +183,7 @@ rtk curl -I https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
 - HTTP 状态为 `200`。
 - 响应头包含 `content-security-policy`。
 - CSP 包含 `connect-src 'none'`。
+- `workers.dev` 回退域名和 `ai.eforge.xyz` 自定义域名返回同一版本。
 
 ## 本次实测结果
 
@@ -214,6 +217,27 @@ rtk curl -I https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
 ```
 
 当前链路已经跑通。后续主线按 Workers 自动部署执行，不再按 Pages 项目配置推进。
+
+## 自定义域名实测补充
+
+2026-05-24 已通过 Workers Custom Domains API 将当前 Worker 绑定到：
+
+```text
+https://ai.eforge.xyz/
+```
+
+该域名是当前项目的正式运维入口，`workers.dev` 域名保留为回退入口。
+
+后续每次推送后，必须同时验证两个入口：
+
+```bash
+rtk curl -I https://ai.eforge.xyz/
+rtk curl -sS https://ai.eforge.xyz/ | rtk rg "custom-domain-smoke"
+rtk curl -I https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
+rtk curl -sS https://gptsession2cpaandsub2api.mailforwdy.workers.dev/ | rtk rg "custom-domain-smoke"
+```
+
+如果两个入口版本不一致，先等待 Cloudflare Workers Builds 完成；仍不一致时再检查缓存、构建日志和 Worker custom domain 绑定状态。
 
 ## 命令行兜底
 
