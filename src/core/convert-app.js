@@ -274,15 +274,19 @@
       default: return item.sub2apiAccount;
     }
   }
+  function buildAccountJsonName(item, idx) {
+    var prefix = String(idx + 1).padStart(4, "0");
+    var identity = FlowPilotConverter.safeNameSegment(item.email || item.accountId || item.name || "account");
+    return prefix + "_" + (identity || "account") + "_" + state.format + ".json";
+  }
 
   document.querySelector("#download-output").addEventListener("click", function () {
     if (dlMode === "multi" && state.converted.length > 1) {
-      /* per-file download */
-      state.converted.forEach(function (item, idx) {
-        var single = JSON.stringify(buildSingle(item), null, 2);
-        var safe = "account_" + String(idx + 1).padStart(2, "0");
-        setTimeout(function () { dl(single, safe + "_" + state.format + ".json"); }, idx * 300);
+      var entries = state.converted.map(function (item, idx) {
+        return { name: buildAccountJsonName(item, idx), data: JSON.stringify(buildSingle(item), null, 2) };
       });
+      FlowPilotConverter.downloadZipFile(entries, "chatgpt_session_" + state.format + "_accounts.zip");
+      st(E.outputStatus, '已打包 ' + entries.length + ' 个账号到 ZIP。', 'ok');
     } else {
       /* single file download (default) */
       dl(state.outputText, "chatgpt_session" + (state.format === "codexAuth" ? "_auth" : "_" + state.format) + ".json");
@@ -300,7 +304,14 @@
   C.clear.addEventListener('click', function () { conv.records = []; conv.skipped = []; C.input.value = ''; C.preview.innerHTML = ''; st(C.status, '等待选择文件。'); });
   C.download.addEventListener('click', function () {
     if (!conv.records.length) return;
-    conv.records.forEach(function (item) { dl(FlowPilotConverter.formatJson(item.payload), (item.sourceName.replace(/\.\w+$/, '') || 'converted').replace(/[^a-zA-Z0-9_.\-]/g, '_') + '_' + item.format + '.json'); });
+    var entries = conv.records.map(function (item) {
+      return {
+        name: (item.sourceName.replace(/\.\w+$/, '') || 'converted').replace(/[^a-zA-Z0-9_.\-]/g, '_') + '_' + item.format + '.json',
+        data: FlowPilotConverter.formatJson(item.payload),
+      };
+    });
+    if (entries.length === 1) dl(entries[0].data, entries[0].name);
+    else FlowPilotConverter.downloadZipFile(entries, 'converted_accounts.zip');
   });
 
   async function readConvFiles(files) {

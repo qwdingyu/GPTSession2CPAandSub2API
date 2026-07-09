@@ -26,4 +26,4 @@
 1. **P0：统一识别入口** — `detectFormat` 与 `findSessionCandidates` 都应识别 Codex/AxonHub/Codex-Manager/9router/sub2api/CPA 的常见结构。
 2. **P0：fixture 回归测试** — 所有矩阵 fixture 必须至少能被检测或被 `parseSessionPayload` 转换。
 3. **P1：UI 预览限量** — 大批量账号只渲染前 200 条表格行，完整 JSON 仍可复制/下载。
-4. **P1：zip 支持** — 暂缓；只有在真实用户持续提供 zip 包时再引入极小 zip 解析方案。
+4. **P1：ZIP 打包下载** — 已实现浏览器本地 store 模式 ZIP 生成，用于多账号拆分下载；ZIP 输入解析仍暂缓。

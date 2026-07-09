@@ -160,6 +160,116 @@ var FlowPilotConverter;
         document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 5000);
     }
+    function crc32(bytes) {
+        let crc = 0xffffffff;
+        for (let index = 0; index < bytes.length; index++) {
+            crc ^= bytes[index];
+            for (let bit = 0; bit < 8; bit++) crc = (crc >>> 1) ^ (0xedb88320 & -(crc & 1));
+        }
+        return (crc ^ 0xffffffff) >>> 0;
+    }
+    function dosDateTime(value) {
+        const date = value instanceof Date && !Number.isNaN(value.getTime()) ? value : new Date();
+        const year = Math.max(1980, date.getFullYear());
+        return {
+            time: (date.getHours() << 11) | (date.getMinutes() << 5) | Math.floor(date.getSeconds() / 2),
+            date: ((year - 1980) << 9) | ((date.getMonth() + 1) << 5) | date.getDate(),
+        };
+    }
+    function writeUint16(target, offset, value) {
+        target[offset] = value & 0xff;
+        target[offset + 1] = (value >>> 8) & 0xff;
+    }
+    function writeUint32(target, offset, value) {
+        target[offset] = value & 0xff;
+        target[offset + 1] = (value >>> 8) & 0xff;
+        target[offset + 2] = (value >>> 16) & 0xff;
+        target[offset + 3] = (value >>> 24) & 0xff;
+    }
+    function concatBytes(parts, totalLength) {
+        const output = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const part of parts) {
+            output.set(part, offset);
+            offset += part.length;
+        }
+        return output;
+    }
+    function normalizeZipEntryName(name, fallback) {
+        const normalized = asString(name || fallback || 'file.json').replace(/\\/g, '/').split('/').filter(Boolean).join('/');
+        return normalized && !normalized.startsWith('.') ? normalized : fallback || 'file.json';
+    }
+    function buildZipArchive(entries, options = {}) {
+        const encoder = new TextEncoder();
+        const now = options.now ? new Date(options.now) : new Date();
+        const stamp = dosDateTime(now);
+        const localParts = [];
+        const centralParts = [];
+        let offset = 0;
+
+        /* 中文注释：这里实现 ZIP 的 store 模式（不压缩），避免新增依赖；JSON 文本可被系统原生解压，足以解决批量下载弹窗问题。 */
+        entries.forEach((entry, index) => {
+            const nameBytes = encoder.encode(normalizeZipEntryName(entry.name, `account_${index + 1}.json`));
+            const dataBytes = entry.data instanceof Uint8Array ? entry.data : encoder.encode(asString(entry.data));
+            const crc = crc32(dataBytes);
+            const local = new Uint8Array(30 + nameBytes.length);
+            writeUint32(local, 0, 0x04034b50);
+            writeUint16(local, 4, 20);
+            writeUint16(local, 6, 0x0800);
+            writeUint16(local, 8, 0);
+            writeUint16(local, 10, stamp.time);
+            writeUint16(local, 12, stamp.date);
+            writeUint32(local, 14, crc);
+            writeUint32(local, 18, dataBytes.length);
+            writeUint32(local, 22, dataBytes.length);
+            writeUint16(local, 26, nameBytes.length);
+            writeUint16(local, 28, 0);
+            local.set(nameBytes, 30);
+            localParts.push(local, dataBytes);
+
+            const central = new Uint8Array(46 + nameBytes.length);
+            writeUint32(central, 0, 0x02014b50);
+            writeUint16(central, 4, 20);
+            writeUint16(central, 6, 20);
+            writeUint16(central, 8, 0x0800);
+            writeUint16(central, 10, 0);
+            writeUint16(central, 12, stamp.time);
+            writeUint16(central, 14, stamp.date);
+            writeUint32(central, 16, crc);
+            writeUint32(central, 20, dataBytes.length);
+            writeUint32(central, 24, dataBytes.length);
+            writeUint16(central, 28, nameBytes.length);
+            writeUint16(central, 30, 0);
+            writeUint16(central, 32, 0);
+            writeUint16(central, 34, 0);
+            writeUint16(central, 36, 0);
+            writeUint32(central, 38, 0);
+            writeUint32(central, 42, offset);
+            central.set(nameBytes, 46);
+            centralParts.push(central);
+            offset += local.length + dataBytes.length;
+        });
+
+        const centralSize = centralParts.reduce((total, part) => total + part.length, 0);
+        const end = new Uint8Array(22);
+        writeUint32(end, 0, 0x06054b50);
+        writeUint16(end, 8, entries.length);
+        writeUint16(end, 10, entries.length);
+        writeUint32(end, 12, centralSize);
+        writeUint32(end, 16, offset);
+        writeUint16(end, 20, 0);
+        return concatBytes([...localParts, ...centralParts, end], offset + centralSize + end.length);
+    }
+    function downloadZipFile(entries, fileName) {
+        const bytes = buildZipArchive(entries);
+        const blob = new Blob([bytes], { type: 'application/zip' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = fileName;
+        document.body.appendChild(a); a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+    }
     function downloadSequentially(items, index = 0) {
         if (index >= items.length) return;
         const item = items[index];
@@ -678,6 +788,8 @@ var FlowPilotConverter;
     FlowPilotConverter.buildCodexFilename = buildCodexFilename;
     FlowPilotConverter.applyDownloadFormat = applyDownloadFormat;
     FlowPilotConverter.downloadTextFile = downloadTextFile;
+    FlowPilotConverter.buildZipArchive = buildZipArchive;
+    FlowPilotConverter.downloadZipFile = downloadZipFile;
     FlowPilotConverter.downloadSequentially = downloadSequentially;
     FlowPilotConverter.getModeValue = getModeValue;
     FlowPilotConverter.getModeLabel = getModeLabel;

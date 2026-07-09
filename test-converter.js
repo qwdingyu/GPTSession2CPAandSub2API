@@ -47,6 +47,7 @@ const subAccount = {
 };
 
 const fixtureDir = path.join(__dirname, 'docs', 'fixtures', 'convert');
+const tmpDir = path.join(__dirname, '.tmp-test');
 
 let passCount = 0;
 let failCount = 0;
@@ -325,6 +326,26 @@ try {
     assert(parsed.converted.length >= 1, `${fileName} converted at least one account`);
     assert(parsed.report.total === parsed.converted.length, `${fileName} report total matches converted count`);
   }
+} catch (e) {
+  console.log(`  FAIL: ${e.message}\n`);
+  failCount++;
+}
+
+// Test 13: ZIP archive generation for batched per-account downloads
+console.log('Test 13: buildZipArchive');
+try {
+  fs.mkdirSync(tmpDir, { recursive: true });
+  const zipBytes = FlowPilotConverter.buildZipArchive([
+    { name: 'account_01_sub2api.json', data: '{"account":1}' },
+    { name: 'nested/account_02_sub2api.json', data: '{"account":2}' },
+  ], { now: new Date('2026-01-01T00:00:00Z') });
+  const zipPath = path.join(tmpDir, 'accounts.zip');
+  fs.writeFileSync(zipPath, Buffer.from(zipBytes));
+  const zipBuffer = fs.readFileSync(zipPath);
+  assert(zipBuffer.readUInt32LE(0) === 0x04034b50, `ZIP local header signature present`);
+  assert(zipBuffer.includes(Buffer.from('account_01_sub2api.json')), `ZIP contains first entry name`);
+  assert(zipBuffer.includes(Buffer.from('nested/account_02_sub2api.json')), `ZIP contains nested entry name`);
+  assert(zipBuffer.includes(Buffer.from('{"account":1}')), `ZIP contains first JSON payload`);
 } catch (e) {
   console.log(`  FAIL: ${e.message}\n`);
   failCount++;
