@@ -307,6 +307,259 @@ var FlowPilotConverter;
         const result = records.length === 1 ? records[0] : records;
         return { ...(isPlainObject(result) ? result : { payload: result }), generatedAt: now.toISOString(), sourceName, mode, format: outputFormat };
     }
+    function firstTokenCandidate(record, keys) {
+        for (const key of keys) {
+            const direct = firstNonEmpty(record[key]);
+            if (direct) return direct;
+        }
+        const containers = ['token', 'tokens', 'credentials', 'credential', 'auth', 'oauth'];
+        for (const container of containers) {
+            const nested = record[container];
+            if (!isPlainObject(nested)) continue;
+            for (const key of keys) {
+                const value = firstNonEmpty(nested[key]);
+                if (value) return value;
+            }
+        }
+        return '';
+    }
+    function hasSessionIdentity(record) {
+        if (!isPlainObject(record)) return false;
+        if (isPlainObject(record.user)) return true;
+        if (firstNonEmpty(record.email, record.name, record.id, record.account_id, record.chatgpt_account_id)) return true;
+        if (firstNonEmpty(record.providerSpecificData?.chatgptAccountId, record.providerSpecificData?.chatgpt_account_id)) return true;
+        if (firstNonEmpty(record.credentials?.email, record.credentials?.chatgpt_account_id, record.extra?.email, record.extra?.chatgpt_account_id)) return true;
+        const accessPayload = parseJwtPayload(firstTokenCandidate(record, ['accessToken', 'access_token', 'idToken', 'id_token']));
+        return Boolean(extractOpenAIInfo(accessPayload));
+    }
+    function isConvertibleSessionRecord(record) {
+        if (!isPlainObject(record)) return false;
+        return Boolean(firstTokenCandidate(record, ['accessToken', 'access_token'])) && hasSessionIdentity(record);
+    }
+    function findSessionCandidates(input, options) {
+        const sourceName = firstNonEmpty(options?.sourceName, 'pasted-json');
+        const candidates = [];
+        const visited = new WeakSet();
+        let scanned = 0;
+        const onProgress = typeof options?.onProgress === 'function' ? options.onProgress : undefined;
+
+        /* 中文注释：这里使用 WeakSet 防止循环引用导致无限递归；虽然 JSON.parse 本身不会产生循环，
+           但该函数也会被测试或未来代码直接传入对象，所以保留防御性设计。 */
+        function visit(item, path) {
+            if (!item || typeof item !== 'object') return;
+            if (visited.has(item)) return;
+            visited.add(item);
+            scanned += 1;
+            if (onProgress && scanned % 5000 === 0) onProgress(20, `搜索中...已扫描 ${scanned} 个节点`);
+            if (Array.isArray(item)) {
+                item.forEach((child, index) => visit(child, `${path}[${index}]`));
+                return;
+            }
+            if (isConvertibleSessionRecord(item)) {
+                candidates.push({ value: item, sourceName, path });
+                return;
+            }
+            for (const [key, child] of Object.entries(item)) {
+                /* 中文注释：令牌字符串体积可能很大且不可再递归，跳过它们可以明显降低大文件扫描成本。 */
+                if (key === 'accessToken' || key === 'access_token' || key === 'sessionToken' || key === 'session_token') continue;
+                visit(child, `${path}.${key}`);
+            }
+        }
+
+        visit(input, '$');
+        return candidates;
+    }
+    function getExpiresInSeconds(expiresAt, now) {
+        if (!expiresAt) return undefined;
+        const expires = Date.parse(expiresAt);
+        if (!Number.isFinite(expires)) return undefined;
+        return Math.max(0, Math.round((expires - now.getTime()) / 1000));
+    }
+    function emailKey(email) {
+        return email ? email.replace(/[.+]/g, '_').toLowerCase() : undefined;
+    }
+    function pruneEmpty(value) {
+        if (Array.isArray(value)) {
+            return value.map(item => pruneEmpty(item)).filter(item => item !== undefined && item !== null);
+        }
+        if (!isPlainObject(value)) return value;
+        const result = {};
+        for (const [key, item] of Object.entries(value)) {
+            if (item === undefined || item === null) continue;
+            const cleaned = pruneEmpty(item);
+            if (isPlainObject(cleaned) && Object.keys(cleaned).length === 0) continue;
+            if (Array.isArray(cleaned) && cleaned.length === 0) continue;
+            result[key] = cleaned;
+        }
+        return result;
+    }
+    function buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt) {
+        if (!accountId) return '';
+        const now = Math.trunc(Date.now() / 1000);
+        const authInfo = { chatgpt_account_id: accountId };
+        const expires = epochSecondsFromValue(expiresAt) || now + 90 * 24 * 60 * 60;
+        if (planType) authInfo.chatgpt_plan_type = planType;
+        if (userId) {
+            authInfo.chatgpt_user_id = userId;
+            authInfo.user_id = userId;
+        }
+        const payload = { iat: now, exp: expires, 'https://api.openai.com/auth': authInfo };
+        if (email) payload.email = email;
+        return `${encodeBase64UrlJson({ alg: 'none', typ: 'JWT', cpa_synthetic: true })}.${encodeBase64UrlJson(payload)}.`;
+    }
+    function normalizeSessionRecord(record, options) {
+        if (!isPlainObject(record)) throw new Error('session 不是 JSON 对象');
+        const now = options?.now ? new Date(options.now) : new Date();
+        const sourceName = firstNonEmpty(options?.sourceName, 'pasted-json');
+        const accessToken = firstTokenCandidate(record, ['accessToken', 'access_token']);
+        if (!accessToken) throw new Error('缺少 accessToken');
+        const sessionToken = firstTokenCandidate(record, ['sessionToken', 'session_token']);
+        const refreshToken = firstTokenCandidate(record, ['refreshToken', 'refresh_token']);
+        const inputIdToken = firstTokenCandidate(record, ['idToken', 'id_token']);
+        const accessPayload = parseJwtPayload(accessToken);
+        const idPayload = parseJwtPayload(inputIdToken);
+        const auth = getOpenAIAuthSection(accessPayload);
+        const idAuth = getOpenAIAuthSection(idPayload);
+        const profile = getOpenAIProfileSection(accessPayload);
+        const idProfile = getOpenAIProfileSection(idPayload);
+        const user = isPlainObject(record.user) ? record.user : {};
+        const providerData = isPlainObject(record.providerSpecificData) ? record.providerSpecificData : {};
+        const credentials = isPlainObject(record.credentials) ? record.credentials : {};
+        const extra = isPlainObject(record.extra) ? record.extra : {};
+        const expiresAt = firstNonEmpty(
+            accessPayload ? timestampFromUnixSeconds(accessPayload.exp) : undefined,
+            idPayload ? timestampFromUnixSeconds(idPayload.exp) : undefined,
+            normalizeTimestamp(record.expires), normalizeTimestamp(record.expiresAt), normalizeTimestamp(record.expired), normalizeTimestamp(record.expires_at),
+            normalizeTimestamp(credentials.expires_at), normalizeTimestamp(extra.expires_at)
+        );
+        const email = firstNonEmpty(record.email, user.email, credentials.email, extra.email, profile.email, idProfile.email, accessPayload?.email, idPayload?.email);
+        const accountId = firstNonEmpty(record.accountId, record.account_id, record.chatgpt_account_id, credentials.chatgpt_account_id, extra.chatgpt_account_id, providerData.chatgptAccountId, providerData.chatgpt_account_id, auth.chatgpt_account_id, idAuth.chatgpt_account_id, auth.account_id, record.id);
+        const userId = firstNonEmpty(record.userId, record.user_id, record.chatgpt_user_id, user.id, credentials.chatgpt_user_id, extra.chatgpt_user_id, providerData.chatgptUserId, providerData.chatgpt_user_id, auth.chatgpt_user_id, idAuth.chatgpt_user_id, auth.user_id);
+        const planType = firstNonEmpty(record.planType, record.plan_type, record.chatgpt_plan_type, credentials.plan_type, extra.plan_type, providerData.chatgptPlanType, providerData.chatgpt_plan_type, auth.chatgpt_plan_type, idAuth.chatgpt_plan_type);
+        const exportedAt = normalizeTimestamp(now);
+        const sourceType = record.provider === 'codex' && record.authType === 'oauth' ? '9router' : 'chatgpt_web_session';
+        const name = firstNonEmpty(record.name, user.name, extra.name, email, sourceName, 'ChatGPT Account');
+        const syntheticIdToken = inputIdToken ? '' : buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt);
+        const idToken = firstNonEmpty(inputIdToken, syntheticIdToken);
+        const expiresIn = getExpiresInSeconds(expiresAt, now);
+        const priority = Number.isFinite(Number(record.priority)) ? Number(record.priority) : 9;
+        const isActive = typeof record.isActive === 'boolean' ? record.isActive : !Boolean(record.disabled);
+        const createdAt = normalizeTimestamp(record.createdAt) || normalizeTimestamp(record.created_at) || exportedAt;
+        const updatedAt = normalizeTimestamp(record.updatedAt) || normalizeTimestamp(record.updated_at) || exportedAt;
+
+        /* 中文注释：内部统一记录同时携带各目标格式，UI 只负责选择输出，不再复制业务转换逻辑。 */
+        const cpa = pruneEmpty({
+            type: 'codex',
+            account_id: accountId,
+            chatgpt_account_id: accountId,
+            email,
+            name,
+            plan_type: planType,
+            chatgpt_plan_type: planType,
+            id_token: idToken,
+            id_token_synthetic: Boolean(syntheticIdToken) || undefined,
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+            session_token: sessionToken,
+            last_refresh: exportedAt,
+            expired: expiresAt,
+            disabled: Boolean(record.disabled) || undefined,
+        });
+        const cockpit = pruneEmpty({
+            type: 'codex',
+            id_token: idToken,
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+            account_id: accountId,
+            last_refresh: exportedAt,
+            email,
+            expired: expiresAt,
+            account_note: firstNonEmpty(record.account_note, record.accountInfo, record.account_info, record.note, record.notes, record.remark),
+        });
+        const codexTokens = pruneEmpty({
+            id_token: accessToken,
+            access_token: accessToken,
+            refresh_token: refreshToken || '',
+            account_id: accountId,
+        });
+        const codexAuth = { OPENAI_API_KEY: null, tokens: codexTokens, last_refresh: exportedAt };
+        const sub2apiAccount = pruneEmpty({
+            name,
+            platform: 'openai',
+            type: 'oauth',
+            concurrency: 10,
+            priority: 1,
+            credentials: {
+                access_token: accessToken,
+                refresh_token: refreshToken || undefined,
+                chatgpt_account_id: accountId,
+                chatgpt_user_id: userId,
+                email,
+                expires_at: expiresAt,
+                expires_in: expiresIn,
+                plan_type: planType,
+            },
+            extra: {
+                email,
+                email_key: emailKey(email),
+                name,
+                auth_provider: firstNonEmpty(record.authProvider, record.auth_provider),
+                source: sourceType,
+                last_refresh: exportedAt,
+            },
+        });
+        const nineRouterAccount = pruneEmpty({
+            name,
+            platform: 'openai',
+            type: 'oauth',
+            priority,
+            isActive,
+            credentials: {
+                client_id: 'codex',
+                access_token: accessToken,
+                refresh_token: refreshToken || '',
+                id_token: idToken,
+                expires_at: expiresAt,
+            },
+            extra: {
+                email,
+                email_key: emailKey(email),
+                name,
+                auth_provider: 'openai',
+                source: sourceType,
+                last_refresh: exportedAt,
+                created_at: createdAt,
+                updated_at: updatedAt,
+            },
+        });
+        return { name, email, expiresAt, planType, accountId, userId, sourceName, sourcePath: options?.sourcePath, sourceType, accessToken, sessionToken, refreshToken, idToken, syntheticIdToken: Boolean(syntheticIdToken), cpa, cockpit, codexAuth, sub2apiAccount, nineRouterAccount };
+    }
+    function parseSessionPayload(textOrPayload, options) {
+        const onProgress = typeof options?.onProgress === 'function' ? options.onProgress : undefined;
+        const sourceName = firstNonEmpty(options?.sourceName, 'pasted-json');
+        if (onProgress) onProgress(0, '解析 JSON...');
+        const parsed = typeof textOrPayload === 'string' ? JSON.parse(textOrPayload) : textOrPayload;
+        if (onProgress) onProgress(20, '搜索 session 对象...');
+        const found = findSessionCandidates(parsed, { sourceName, onProgress });
+        if (onProgress) onProgress(40, `转换 ${found.length} 个 session...`);
+        const converted = [];
+        const skipped = [];
+        const now = options?.now ? new Date(options.now) : new Date();
+        for (let index = 0; index < found.length; index++) {
+            if (onProgress && index % 50 === 0) {
+                const pct = found.length ? 40 + Math.round((index / found.length) * 50) : 90;
+                onProgress(pct, `转换中 ${index}/${found.length}...`);
+            }
+            try {
+                converted.push(normalizeSessionRecord(found[index].value, { now, sourceName: found[index].sourceName, sourcePath: found[index].path }));
+            } catch (error) {
+                skipped.push({ sourceName: found[index].sourceName, path: found[index].path, reason: error.message || '无法转换' });
+            }
+        }
+        if (onProgress) onProgress(95, '生成输出...');
+        return { converted, skipped, found };
+    }
+
     function countAccountsInResult(result) {
         /* Count how many account objects are in a convertCpaPayload/convertSubPayload result */
         if (!isPlainObject(result)) return 0;
@@ -380,6 +633,9 @@ var FlowPilotConverter;
     FlowPilotConverter.normalizeSubAccountToSub = normalizeSubAccountToSub;
     FlowPilotConverter.convertCpaPayload = convertCpaPayload;
     FlowPilotConverter.convertSubPayload = convertSubPayload;
+    FlowPilotConverter.findSessionCandidates = findSessionCandidates;
+    FlowPilotConverter.normalizeSessionRecord = normalizeSessionRecord;
+    FlowPilotConverter.parseSessionPayload = parseSessionPayload;
     FlowPilotConverter.countAccountsInResult = countAccountsInResult;
     FlowPilotConverter.escapeHtml = escapeHtml;
 })(FlowPilotConverter || (FlowPilotConverter = {}));

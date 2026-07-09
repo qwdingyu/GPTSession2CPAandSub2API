@@ -59,6 +59,28 @@ function assert(condition, message) {
   }
 }
 
+function makeJwt(payload) {
+  return `${FlowPilotConverter.encodeBase64UrlJson({ alg: 'none', typ: 'JWT' })}.${FlowPilotConverter.encodeBase64UrlJson(payload)}.`;
+}
+
+function makeSession(index) {
+  const accountId = `acct-${index}`;
+  const email = `user${index}@example.com`;
+  return {
+    accessToken: makeJwt({
+      exp: 1893456000,
+      email,
+      'https://api.openai.com/auth': {
+        chatgpt_account_id: accountId,
+        chatgpt_user_id: `usr-${index}`,
+        chatgpt_plan_type: index % 2 === 0 ? 'plus' : 'free',
+      },
+    }),
+    refreshToken: `refresh-${index}`,
+    user: { id: `usr-${index}`, email },
+  };
+}
+
 console.log('Testing FlowPilotConverter...\n');
 
 // Test 1: detectFormat
@@ -212,6 +234,65 @@ try {
   assert(false, `downloadTextFile should throw in Node`);
 } catch (e) {
   assert(true, `downloadTextFile throws in Node as expected`);
+}
+
+// Test 8: ChatGPT session payload extraction and all target records
+console.log('Test 8: parseSessionPayload single ChatGPT session');
+try {
+  const result = FlowPilotConverter.parseSessionPayload(JSON.stringify(makeSession(1)), {
+    sourceName: 'session.json',
+    now: new Date('2026-01-01T00:00:00Z'),
+  });
+  const item = result.converted[0];
+  assert(result.converted.length === 1, `single session converted`);
+  assert(item.cpa.access_token === item.accessToken, `CPA access_token generated`);
+  assert(item.sub2apiAccount.credentials.access_token === item.accessToken, `sub2api access_token generated`);
+  assert(item.nineRouterAccount.credentials.client_id === 'codex', `9router has codex client_id`);
+  assert(item.codexAuth.tokens.access_token === item.accessToken, `Codex auth tokens generated`);
+  assert(item.syntheticIdToken === true, `synthetic id_token generated when source lacks id_token`);
+} catch (e) {
+  console.log(`  FAIL: ${e.message}\n`);
+  failCount++;
+}
+
+// Test 9: One file with nested multi-session groups
+console.log('Test 9: nested multi-session payload');
+try {
+  const payload = { exports: [{ group: [makeSession(1), makeSession(2)] }, { nested: { session: makeSession(3) } }] };
+  const result = FlowPilotConverter.parseSessionPayload(JSON.stringify(payload), { sourceName: 'multi.json' });
+  assert(result.converted.length === 3, `nested file converted 3 sessions`);
+  assert(result.found.every(item => item.path.startsWith('$')), `source paths recorded`);
+} catch (e) {
+  console.log(`  FAIL: ${e.message}\n`);
+  failCount++;
+}
+
+// Test 10: Existing 9router-shaped account remains distinguishable from sub2api output
+console.log('Test 10: 9router-shaped input output');
+try {
+  const payload = { accounts: [{ name: 'router-account', provider: 'codex', authType: 'oauth', credentials: { access_token: makeSession(9).accessToken, refresh_token: 'r9' }, extra: { email: 'router@example.com' }, account_id: 'router-1' }] };
+  const result = FlowPilotConverter.parseSessionPayload(JSON.stringify(payload), { sourceName: '9router.json' });
+  const item = result.converted[0];
+  assert(result.converted.length === 1, `9router-like account converted`);
+  assert(item.sourceType === '9router', `sourceType detected as 9router`);
+  assert(item.nineRouterAccount.credentials.client_id === 'codex', `9router output is not sub2api fallback`);
+} catch (e) {
+  console.log(`  FAIL: ${e.message}\n`);
+  failCount++;
+}
+
+// Test 11: Large batch handles thousands of records
+console.log('Test 11: large batch 5000 sessions');
+try {
+  const payload = { accounts: Array.from({ length: 5000 }, (_, index) => makeSession(index + 1)) };
+  const startedAt = Date.now();
+  const result = FlowPilotConverter.parseSessionPayload(JSON.stringify(payload), { sourceName: 'large.json' });
+  assert(result.converted.length === 5000, `5000 sessions converted`);
+  assert(result.skipped.length === 0, `no skipped records in generated batch`);
+  assert(Date.now() - startedAt < 5000, `large batch completes under 5s in Node test`);
+} catch (e) {
+  console.log(`  FAIL: ${e.message}\n`);
+  failCount++;
 }
 
 console.log(`\nResults: ${passCount} passed, ${failCount} failed`);

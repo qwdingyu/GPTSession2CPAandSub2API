@@ -51,7 +51,7 @@
 
   /* ── Parser: Worker preferred, inline fallback for file:// ── */
   var USE_WORKER = true;
-  var worker = null, workerPending = null;
+  var worker = null, workerPending = null, workerSeq = 0;
 
   function getWorker() {
     if (!worker) {
@@ -61,9 +61,10 @@
         USE_WORKER = true;
         worker.onmessage = function (e) {
           var d = e.data;
+          if (!workerPending || d.requestId !== workerPending.requestId) return;
           if (d.type === 'progress') { showProgress(d.pct, d.status); }
-          else if (d.type === 'result-parse') { hideProgress(); if (workerPending) { workerPending.resolve(d.payload); workerPending = null; } }
-          else { hideProgress(); if (workerPending) { workerPending.reject(new Error(d.error)); workerPending = null; } }
+          else if (d.type === 'result-parse') { hideProgress(); workerPending.resolve(d.payload); workerPending = null; }
+          else { hideProgress(); workerPending.reject(new Error(d.error)); workerPending = null; }
         };
         worker.onerror = function () {
           /* Worker failed (e.g. file://) — retry inline */
@@ -84,10 +85,11 @@
 
   function parseInWorker(text, sourceName) {
     return new Promise(function (resolve, reject) {
-      workerPending = { resolve: resolve, reject: reject, text: text, sourceName: sourceName };
+      var requestId = ++workerSeq;
+      workerPending = { requestId: requestId, resolve: resolve, reject: reject, text: text, sourceName: sourceName };
       getWorker();
       if (USE_WORKER && worker) {
-        worker.postMessage({ type: 'parse-sessions', payload: { text: text, sourceName: sourceName } });
+        worker.postMessage({ type: 'parse-sessions', requestId: requestId, payload: { text: text, sourceName: sourceName } });
       } else {
         runInline(text, sourceName, resolve, reject);
       }
@@ -109,112 +111,11 @@
   }
 
   function parseSessionsInline(text, sourceName) {
-    var parsed = JSON.parse(text);
-    showProgress(20, '搜索 session 对象...');
-    var found = [];
-    var visited = new WeakSet();
-    var visitCount = 0;
-
-    function visit(item, path) {
-      if (!item || typeof item !== 'object') return;
-      if (visited.has(item)) return;
-      visited.add(item);
-      /* Yield every 5000 visits to avoid freezing on huge JSON */
-      visitCount++;
-      if (visitCount % 5000 === 0) {
-        showProgress(20, '搜索中...已扫描 ' + visitCount + ' 个节点');
-      }
-      if (Array.isArray(item)) { item.forEach(function (c, i) { visit(c, path + '[' + i + ']'); }); return; }
-
-      var token = firstNonEmpty(item.accessToken, item.access_token, item.token && item.token.accessToken, item.token && item.token.access_token, item.credentials && item.credentials.accessToken, item.credentials && item.credentials.access_token);
-      var hasIdentity = FlowPilotConverter.isPlainObject(item.user) || firstNonEmpty(item.email, item.name, item.providerSpecificData && item.providerSpecificData.chatgptAccountId, item.providerSpecificData && item.providerSpecificData.chatgpt_account_id, item.id);
-      if (token && hasIdentity) { found.push({ value: item, sourceName: sourceName, path: path }); return; }
-
-      for (var key in item) {
-        if (item.hasOwnProperty(key) && key !== 'accessToken' && key !== 'access_token' && key !== 'sessionToken') {
-          visit(item[key], path + '.' + key);
-        }
-      }
-    }
-    visit(parsed, '$');
-
-    showProgress(40, '转换 ' + found.length + ' 个 session...');
-    var converted = [], skipped = [];
-
-    for (var i = 0; i < found.length; i++) {
-      if (i % 50 === 0) showProgress(40 + Math.round(i / found.length * 50), '转换中 ' + i + '/' + found.length + '...');
-      try {
-        converted.push(convertSessionInline(found[i].value, { now: new Date(), sourceName: found[i].sourceName, sourcePath: found[i].path }));
-      } catch (err) {
-        skipped.push({ sourceName: found[i].sourceName, path: found[i].path, reason: err.message || '无法转换' });
-      }
-    }
-    showProgress(95, '生成输出...');
-    return { converted: converted, skipped: skipped, found: found };
-  }
-
-  function firstNonEmpty() {
-    for (var i = 0; i < arguments.length; i++) {
-      var v = arguments[i];
-      if (typeof v === 'string' && v.trim() !== '') return v.trim();
-    }
-    return undefined;
-  }
-
-  function convertSessionInline(record, opts) {
-    if (!FlowPilotConverter.isPlainObject(record)) throw new Error('session 不是 JSON 对象');
-    var accessToken = firstNonEmpty(record.accessToken, record.access_token, record.token && record.token.accessToken, record.token && record.token.access_token, record.credentials && record.credentials.accessToken, record.credentials && record.credentials.access_token);
-    if (!accessToken) throw new Error('缺少 accessToken');
-    var sessionToken = firstNonEmpty(record.sessionToken, record.session_token, record.token && record.token.sessionToken, record.token && record.token.session_token, record.credentials && record.credentials.session_token);
-    var refreshToken = firstNonEmpty(record.refreshToken, record.refresh_token, record.token && record.token.refreshToken, record.token && record.token.refresh_token, record.credentials && record.credentials.refresh_token);
-    var inputIdToken = firstNonEmpty(record.idToken, record.id_token, record.token && record.token.idToken, record.token && record.token.id_token, record.credentials && record.credentials.id_token);
-    var payload = FlowPilotConverter.parseJwtPayload(accessToken);
-    var idPayload = FlowPilotConverter.parseJwtPayload(inputIdToken);
-    var auth = FlowPilotConverter.getOpenAIAuthSection(payload);
-    var idAuth = FlowPilotConverter.getOpenAIAuthSection(idPayload);
-    var profile = FlowPilotConverter.getOpenAIProfileSection(payload);
-    var expiresAt = firstNonEmpty(payload ? FlowPilotConverter.timestampFromUnixSeconds(payload.exp) : undefined, FlowPilotConverter.normalizeTimestamp(record.expires), FlowPilotConverter.normalizeTimestamp(record.expiresAt), FlowPilotConverter.normalizeTimestamp(record.expired), FlowPilotConverter.normalizeTimestamp(record.expires_at));
-    var email = firstNonEmpty(record.user && record.user.email, record.email, record.credentials && record.credentials.email, record.providerSpecificData && record.providerSpecificData.email, profile.email, idPayload && idPayload.email, payload && payload.email);
-    var accountId = firstNonEmpty(record.account && record.account.id, record.account_id, record.chatgptAccountId, record.providerSpecificData && record.providerSpecificData.chatgptAccountId, record.providerSpecificData && record.providerSpecificData.chatgpt_account_id, record.credentials && record.credentials.chatgpt_account_id, auth.chatgpt_account_id, idAuth.chatgpt_account_id, record.provider === 'codex' ? record.id : undefined);
-    var userId = firstNonEmpty(record.user && record.user.id, record.user_id, record.chatgptUserId, record.providerSpecificData && record.providerSpecificData.chatgptUserId, record.providerSpecificData && record.providerSpecificData.chatgpt_user_id, auth.chatgpt_user_id, auth.user_id, idAuth.chatgpt_user_id, idAuth.user_id);
-    var planType = firstNonEmpty(record.account && record.account.planType, record.account && record.account.plan_type, record.planType, record.plan_type, record.providerSpecificData && record.providerSpecificData.chatgptPlanType, record.providerSpecificData && record.providerSpecificData.chatgpt_plan_type, record.credentials && record.credentials.plan_type, auth.chatgpt_plan_type, idAuth.chatgpt_plan_type);
-    var exportedAt = FlowPilotConverter.normalizeTimestamp(opts.now || new Date());
-    var sourceName = firstNonEmpty(opts.sourceName, 'pasted-json');
-    var sourceType = record.provider === 'codex' && record.authType === 'oauth' ? '9router' : 'chatgpt_web_session';
-    var name = firstNonEmpty(email, sourceName, 'ChatGPT Account');
-    var syntheticIdToken = !inputIdToken ? buildSynthIdToken(email, accountId, planType, userId, expiresAt) : undefined;
-    var idToken = firstNonEmpty(inputIdToken, syntheticIdToken);
-    var cpa = objFilter({ type: 'codex', account_id: accountId, chatgpt_account_id: accountId, email: email, name: name, plan_type: planType, chatgpt_plan_type: planType, id_token: idToken, id_token_synthetic: Boolean(syntheticIdToken) || undefined, access_token: accessToken, refresh_token: refreshToken || '', session_token: sessionToken, last_refresh: exportedAt, expired: expiresAt, disabled: Boolean(record.disabled) || undefined });
-    var cockpit = { type: 'codex', id_token: idToken, access_token: accessToken, refresh_token: refreshToken || '', account_id: accountId, last_refresh: exportedAt, email: email, expired: expiresAt, account_note: firstNonEmpty(record.account_note, record.accountInfo, record.account_info, record.note, record.notes, record.remark) };
-    var codexTokens = objFilter({ id_token: accessToken, access_token: accessToken, refresh_token: refreshToken || '', account_id: accountId });
-    var codexAuth = { OPENAI_API_KEY: null, tokens: codexTokens, last_refresh: exportedAt };
-    var sub2apiAccount = { name: firstNonEmpty(name, email, sourceName, 'ChatGPT Account'), platform: 'openai', type: 'oauth', concurrency: 10, priority: 1, credentials: { access_token: accessToken, chatgpt_account_id: accountId, chatgpt_user_id: userId, email: email, expires_at: expiresAt, plan_type: planType }, extra: { email: email, name: name, auth_provider: firstNonEmpty(record.authProvider, record.auth_provider), source: sourceType, last_refresh: exportedAt } };
-    return { name: name, email: email, expiresAt: expiresAt, planType: planType, accountId: accountId, userId: userId, sourceName: sourceName, sourceType: sourceType, accessToken: accessToken, sessionToken: sessionToken, refreshToken: refreshToken, idToken: idToken, syntheticIdToken: Boolean(syntheticIdToken), cpa: cpa, cockpit: cockpit, codexAuth: codexAuth, sub2apiAccount: sub2apiAccount, nineRouterAccount: sub2apiAccount };
-  }
-
-  function buildSynthIdToken(email, accountId, planType, userId, expiresAt) {
-    if (!accountId) return undefined;
-    var now = Math.trunc(Date.now() / 1000);
-    var authInfo = { chatgpt_account_id: accountId };
-    var expires = epochSec(expiresAt) || now + 90 * 24 * 60 * 60;
-    if (planType) authInfo.chatgpt_plan_type = planType;
-    if (userId) { authInfo.chatgpt_user_id = userId; authInfo.user_id = userId; }
-    var payload = { iat: now, exp: expires, 'https://api.openai.com/auth': authInfo };
-    if (email) payload.email = email;
-    return FlowPilotConverter.encodeBase64UrlJson({ alg: 'none', typ: 'JWT', cpa_synthetic: true }) + '.' + FlowPilotConverter.encodeBase64UrlJson(payload) + '.';
-  }
-
-  function epochSec(v) {
-    var n = Number(v);
-    if (Number.isFinite(n)) return Math.trunc(n > 1e11 ? n / 1000 : n);
-    var p = Date.parse(String(v));
-    return Number.isFinite(p) ? Math.trunc(p / 1000) : 0;
-  }
-
-  function objFilter(obj) {
-    var r = {};
-    for (var k in obj) { if (obj.hasOwnProperty(k) && obj[k] !== undefined && obj[k] !== null) r[k] = obj[k]; }
-    return r;
+    return FlowPilotConverter.parseSessionPayload(text, {
+      sourceName: sourceName,
+      now: new Date(),
+      onProgress: showProgress,
+    });
   }
 
   /* ── Download mode toggle ── */
