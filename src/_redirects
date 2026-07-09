@@ -1,0 +1,4 @@
+# Cloudflare Pages _redirects — deploy-time compiled rules, zero runtime cost
+# Convert tool: standalone HTML page
+/convert /convert.html 200
+/tool/convert /convert.html 200

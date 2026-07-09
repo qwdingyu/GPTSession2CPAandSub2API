@@ -53,7 +53,30 @@ src/index.html
 
 所有解析和转换都在浏览器本地完成，不上传 token，不写入本地存储。
 
-## Cloudflare Workers 部署
+## 浏览器验证
+
+若需在本地浏览器中逐项验收转换功能，可参考：
+
+```text
+docs/BROWSER_TESTING.md
+```
+
+该指南包含单文件/批量转换、边界情况和控制台无错误的检查步骤。
+
+## Cloudflare Pages 部署
+
+本项目现支持直接部署到 Cloudflare Pages：
+
+```text
+Project: GPTSession2CPAandSub2API
+Framework preset: None / Static assets
+Build command: 留空
+Build output directory: src
+```
+
+仓库内 `wrangler.jsonc` 已改为 Pages 资产托管配置，`src/_headers` 已提供基础安全头。后续推荐在 Cloudflare Dashboard 中进入 Pages 项目的 `Settings -> Builds`，连接 GitHub 仓库，让 `main` 分支每次 push 自动触发 Pages 构建。
+
+## Cloudflare Workers 部署（历史/替代方案）
 
 本项目当前线上地址运行在 Cloudflare Workers：
 
@@ -61,13 +84,9 @@ src/index.html
 https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
 ```
 
-仓库内的 `wrangler.jsonc` 是 Worker 部署配置源，Worker 名称必须与 Cloudflare 中现有 Worker 保持一致：
+若仍需通过 Workers 部署，需单独保留一份 Worker 部署配置；仓库内当前的 `wrangler.jsonc` 已改为 Pages 资产托管配置，**不再适用于 Workers**。
 
-```text
-gptsession2cpaandsub2api
-```
-
-推荐配置：
+Worker 部署参考配置：
 
 ```text
 Worker name: gptsession2cpaandsub2api

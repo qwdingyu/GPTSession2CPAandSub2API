@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ChatGPT Session Converter — AI Forge</title>
+<meta name="theme-color" content="#0e1a1e">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any">
+<link rel="stylesheet" href="./tools/convert.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- Header with breadcrumb -->
+  <header class="topbar">
+    <div class="title-block">
+      <p class="eyebrow"><a href="index.html">← AI Forge</a> / Local JSON Converter</p>
+      <h1>ChatGPT Session Converter</h1>
+      <div class="title-targets" aria-label="支持输出格式">
+        <span>CPA</span><span>sub2api</span><span>Cockpit</span><span>9router</span><span>Codex auth.json</span>
+      </div>
+    </div>
+    <div class="meta-row" aria-label="处理方式">
+      <span class="meta-chip">浏览器本地解析</span>
+      <span class="meta-chip">不上传 token</span>
+      <span class="meta-chip">不写入存储</span>
+      <a class="meta-chip github-link" href="https://github.com/qwdingyu/GPTSession2CPAandSub2API" target="_blank" rel="noreferrer" aria-label="GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true" style="width:14px;height:14px;fill:currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58v-2.24c-3.34.73-4.04-1.42-4.04-1.42-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.85 1.24 1.85 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.66-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23A11.5 11.5 0 0 1 12 5.78c1.02 0 2.05.14 3.01.41 2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.93.43.37.82 1.1.82 2.22v3.3c0 .32.22.7.83.58A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12Z"/></svg>
+        <span>开源</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- QQ Group Banner -->
+  <div class="banner-qq">
+    <span class="banner-qq-icon">🐧</span>
+    <span class="banner-qq-text">加入 QQ 群 <strong>1079544259</strong> 交流 AI 使用技巧</span>
+    <span class="banner-qq-copy" id="qq-copy-top">复制群号</span>
+  </div>
+
+  <!-- Tabs -->
+  <nav class="tabs" role="tablist" aria-label="功能">
+    <button class="tab-btn" role="tab" aria-selected="true" aria-controls="tab-session">Session 转换</button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-converter">文件互转</button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-about">使用说明</button>
+  </nav>
+
+  <!-- Tab: Session 转换 -->
+  <section class="tab-panel" id="tab-session" role="tabpanel" aria-hidden="false">
+
+    <!-- Format selector -->
+    <div class="toolbar">
+      <div class="segmented" role="group" aria-label="输出格式">
+        <button type="button" data-format="sub2api" aria-pressed="true">sub2api</button>
+        <button type="button" data-format="cpa" aria-pressed="false">CPA</button>
+        <button type="button" data-format="cockpit" aria-pressed="false">Cockpit</button>
+        <button type="button" data-format="9router" aria-pressed="false">9router</button>
+        <button type="button" data-format="codexAuth" aria-pressed="false">Codex</button>
+      </div>
+    </div>
+
+    <!-- Two-column layout: Input + Output side by side -->
+    <div class="convert-layout">
+
+      <!-- Input column -->
+      <div class="convert-col">
+        <div class="panel">
+          <div class="panel-head"><div><h2>📥 输入 Session JSON</h2></div></div>
+          <div class="panel-body">
+            <div class="guide-card">
+              <strong>从哪里获取？</strong>
+              <p>在浏览器登录 ChatGPT，打开 <a href="https://chatgpt.com/api/auth/session" target="_blank" rel="noreferrer">chatgpt.com/api/auth/session</a>，复制显示的整段 JSON 粘贴到下方。</p>
+              <p class="warning">⚠️ 包含 accessToken，等同密码，请勿发给他人。</p>
+            </div>
+            <input class="hidden" id="file-input" type="file" accept=".json,application/json" multiple>
+            <div class="input-actions">
+              <button class="btn btn-secondary" id="pick-files">📂 选择文件</button>
+              <button class="btn btn-secondary" id="load-example">📄 填入示例</button>
+              <span class="spacer"></span>
+              <button class="btn btn-ghost" id="clear-input">清空</button>
+            </div>
+            <textarea id="session-input" spellcheck="false" placeholder='{"user":{"email":"mark@example.com"},"expires":"2026-08-06T14:29:36.155Z","account":{"id":"...","planType":"plus"},"accessToken":"...","sessionToken":"..."}'></textarea>
+            <div class="status-line" id="input-status">等待输入。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Output column -->
+      <div class="convert-col">
+        <div class="panel">
+          <div class="panel-head">
+            <div><h2>📤 转换结果</h2><p id="output-subtitle">当前输出为 sub2api 格式</p></div>
+            <div class="actions">
+              <button class="btn btn-secondary" id="copy-output" disabled>📋 复制</button>
+              <button class="btn btn-primary" id="download-output" disabled>⬇ 下载</button>
+            </div>
+          </div>
+          <div class="panel-body">
+            <p class="notice" id="cpa-notice">ChatGPT Web session 一般没有 <code>refresh_token</code>；CPA/Cockpit 缺少真实 <code>id_token</code> 时会构造占位 claims。</p>
+
+            <div class="progress-wrap" id="progress-wrap">
+              <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+              <div class="progress-text" id="progress-text"></div>
+            </div>
+
+            <div class="download-options hidden" id="download-options">
+    <label class="dl-mode">
+      <span class="dl-mode-label">下载方式</span>
+      <span class="dl-mode-pills" id="dl-mode-pills">
+        <button type="button" class="dl-pill active" data-dl="single">📦 全部合并</button>
+        <button type="button" class="dl-pill" data-dl="multi">📂 每账号单独</button>
+      </span>
+      <span class="dl-count" id="dl-count" style="margin-left:4px;font-size:.76rem;color:var(--text-dim)"></span>
+    </label>
+  </div>
+  <div class="stat-row">
+              <div class="stat-box"><div class="stat-num" id="stat-count">0</div><div class="stat-lbl">账号数</div></div>
+              <div class="stat-box"><div class="stat-num" id="stat-format">sub2api</div><div class="stat-lbl">输出格式</div></div>
+              <div class="stat-box"><div class="stat-num" id="stat-errors">0</div><div class="stat-lbl">跳过项</div></div>
+            </div>
+
+            <div class="table-container" id="account-table-wrap">
+              <table>
+                <colgroup><col class="col-name"><col class="col-email"><col class="col-expiry"><col class="col-extra"></colgroup>
+                <thead><tr><th>名称</th><th>邮箱</th><th>过期时间</th><th>来源</th></tr></thead>
+                <tbody id="account-body"><tr><td colspan="4" class="empty-msg">暂无可转换账号。</td></tr></tbody>
+              </table>
+            </div>
+
+            <div class="issues" id="issues"></div>
+
+            <pre class="json-preview collapsed" id="output-preview">转换后会显示 JSON。</pre>
+            <span class="json-toggle hidden" id="output-toggle">展开完整 JSON</span>
+
+            <textarea id="output" readonly spellcheck="false" class="hidden"></textarea>
+            <div class="status-line" id="output-status">暂无输出。</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /convert-layout -->
+  </section>
+
+  <!-- Tab: 文件互转 -->
+  <section class="tab-panel" id="tab-converter" role="tabpanel" aria-hidden="true">
+    <div class="panel">
+      <div class="panel-head"><div><h2>文件互转</h2><p>上传 CPA / sub2api JSON 文件进行格式互转，支持批量下载。</p></div></div>
+      <div class="panel-body">
+        <input class="hidden" id="converter-file-input" type="file" accept=".json,application/json" multiple>
+        <div class="upload-zone">
+          <button class="btn btn-secondary" id="pick-converter-files">📂 选择文件</button>
+          <button class="btn btn-secondary" id="download-converted">⬇ 下载转换结果</button>
+          <button class="btn btn-ghost" id="clear-converter">清空</button>
+        </div>
+        <div class="converter-preview" id="converter-preview"></div>
+        <div class="status-line" id="converter-status">等待选择文件。</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tab: 使用说明 -->
+  <section class="tab-panel" id="tab-about" role="tabpanel" aria-hidden="true">
+    <div class="panel">
+      <div class="panel-head"><div><h2>使用说明</h2></div></div>
+      <div class="panel-body about-text">
+        <h3>三种使用方式</h3>
+        <ol>
+          <li><strong>粘贴 JSON</strong> — 复制 <code>chatgpt.com/api/auth/session</code> 的返回内容，粘贴到输入框</li>
+          <li><strong>拖入文件</strong> — 将一个或多个 JSON 文件拖到输入框区域</li>
+          <li><strong>选择文件</strong> — 点击"选择文件"按钮，选中 JSON 文件</li>
+        </ol>
+        <h3>输出格式</h3>
+        <ul>
+          <li><strong>sub2api</strong> — sub2api 项目导入格式</li>
+          <li><strong>CPA</strong> — Codex Project Alpha 账号格式</li>
+          <li><strong>Cockpit</strong> — 简化的账号管理格式</li>
+          <li><strong>9router</strong> — 9router 路由项目导入格式</li>
+          <li><strong>Codex auth.json</strong> — Codex CLI 本地认证文件</li>
+        </ul>
+        <p><strong>ChatGPT Session Converter</strong> 纯浏览器端工具，所有数据在浏览器本地处理，<strong>不会上传到任何服务器</strong>。</p>
+        <p><a href="https://github.com/qwdingyu/GPTSession2CPAandSub2API" target="_blank" rel="noreferrer">GitHub 开源</a></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- QQ Group Footer
+  <div class="banner-qq" style="margin-top:12px">
+    <span class="banner-qq-icon">🐧</span>
+    <span class="banner-qq-text">加入 QQ 群 <strong>1079544259</strong> 交流 AI 使用技巧</span>
+    <span class="banner-qq-copy" id="qq-copy-bottom">复制群号</span>
+  </div>
+  -->
+
+</div>
+
+<script src="./core/converter.js"></script>
+<script src="./core/convert-app.js"></script>
+</body>
+</html>
