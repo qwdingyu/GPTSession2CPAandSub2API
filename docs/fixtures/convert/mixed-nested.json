@@ -1,0 +1,27 @@
+{
+  "exports": [
+    {
+      "chatgpt": {
+        "accessToken": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjlAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC05IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTkiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+        "user": {
+          "email": "user9@example.com"
+        }
+      }
+    },
+    {
+      "bundle": {
+        "accounts": [
+          {
+            "credentials": {
+              "access_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjEwQGV4YW1wbGUuY29tIiwiaHR0cHM6Ly9hcGkub3BlbmFpLmNvbS9hdXRoIjp7ImNoYXRncHRfYWNjb3VudF9pZCI6ImFjY3QtMTAiLCJjaGF0Z3B0X3VzZXJfaWQiOiJ1c3ItMTAiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+              "refresh_token": "refresh-10"
+            },
+            "extra": {
+              "email": "user10@example.com"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

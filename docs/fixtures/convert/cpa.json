@@ -1,0 +1,11 @@
+{
+  "type": "codex",
+  "account_id": "acct-4",
+  "email": "user4@example.com",
+  "plan_type": "team",
+  "id_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjRAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC00IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTQiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InRlYW0ifX0.",
+  "access_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjRAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC00IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTQiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InRlYW0ifX0.",
+  "refresh_token": "refresh-4",
+  "session_token": "session-4",
+  "expired": "2030-01-01T00:00:00Z"
+}

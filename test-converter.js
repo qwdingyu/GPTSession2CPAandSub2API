@@ -46,6 +46,8 @@ const subAccount = {
   "organization_id": "test-org-id"
 };
 
+const fixtureDir = path.join(__dirname, 'docs', 'fixtures', 'convert');
+
 let passCount = 0;
 let failCount = 0;
 
@@ -295,6 +297,34 @@ try {
   assert(result.report.total === 5000, `compatibility report counts total records`);
   assert(result.report.syntheticIdToken === 5000, `compatibility report counts synthetic id tokens`);
   assert(Date.now() - startedAt < 5000, `large batch completes under 5s in Node test`);
+} catch (e) {
+  console.log(`  FAIL: ${e.message}\n`);
+  failCount++;
+}
+
+// Test 12: documented format matrix fixtures stay convertible
+console.log('Test 12: convert format matrix fixtures');
+try {
+  const expectedFormats = {
+    'chatgpt-session.json': 'unknown',
+    'codex-auth.json': 'codex-auth',
+    'sub2api-accounts.json': 'sub',
+    'cpa.json': 'cpa',
+    'cockpit.json': 'cpa',
+    '9router.json': '9router',
+    'axonhub.json': 'axonhub',
+    'codex-manager.json': 'codex-manager',
+    'mixed-nested.json': 'unknown',
+  };
+  for (const [fileName, expectedFormat] of Object.entries(expectedFormats)) {
+    const text = fs.readFileSync(path.join(fixtureDir, fileName), 'utf8');
+    const payload = JSON.parse(text);
+    const detected = FlowPilotConverter.detectFormat(payload);
+    assert(detected === expectedFormat, `${fileName} detected as ${expectedFormat} (got: ${detected})`);
+    const parsed = FlowPilotConverter.parseSessionPayload(text, { sourceName: fileName, now: new Date('2026-01-01T00:00:00Z') });
+    assert(parsed.converted.length >= 1, `${fileName} converted at least one account`);
+    assert(parsed.report.total === parsed.converted.length, `${fileName} report total matches converted count`);
+  }
 } catch (e) {
   console.log(`  FAIL: ${e.message}\n`);
   failCount++;

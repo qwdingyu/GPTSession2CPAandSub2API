@@ -1,0 +1,10 @@
+{
+  "OPENAI_API_KEY": null,
+  "tokens": {
+    "id_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjJAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC0yIiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTIiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+    "access_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjJAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC0yIiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTIiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+    "refresh_token": "refresh-2",
+    "account_id": "acct-2"
+  },
+  "last_refresh": "2026-01-01T00:00:00Z"
+}

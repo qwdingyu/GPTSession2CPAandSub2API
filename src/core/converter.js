@@ -192,17 +192,23 @@ var FlowPilotConverter;
     function detectFormat(value) {
         if (Array.isArray(value)) {
             if (value.length === 0) return 'unknown';
+            if (value.some(acc => isPlainObject(acc) && acc.tokens && acc.meta && acc.tokens.access_token)) return 'codex-manager';
             if (value.some(acc => isPlainObject(acc) && acc.credentials && acc.credentials.access_token)) return 'sub';
             if (value.some(acc => isPlainObject(acc) && acc.type === 'codex')) return 'cpa';
             return 'sub';
         }
         if (!isPlainObject(value)) return 'unknown';
+        if (isPlainObject(value.tokens) && value.tokens.access_token && value.auth_mode) return 'axonhub';
+        if (isPlainObject(value.tokens) && value.tokens.access_token && (value.OPENAI_API_KEY !== undefined || value.last_refresh)) return 'codex-auth';
+        if (isPlainObject(value.tokens) && isPlainObject(value.meta) && value.tokens.access_token) return 'codex-manager';
         if (value.type === 'codex') return 'cpa';
         if (value.access_token || value.refresh_token || value.session_token) return 'cpa';
         if (Array.isArray(value.accounts)) {
+            if (value.accounts.some(acc => isPlainObject(acc) && acc.tokens && acc.meta && acc.tokens.access_token)) return 'codex-manager';
             if (value.accounts.some(acc => isPlainObject(acc) && acc.type === 'codex')) return 'cpa';
             return 'sub';
         }
+        if (value.provider === 'codex' && value.authType === 'oauth') return '9router';
         if (isPlainObject(value.credentials) && value.credentials.access_token) return 'sub';
         return 'unknown';
     }
@@ -328,6 +334,7 @@ var FlowPilotConverter;
         if (isPlainObject(record.user)) return true;
         if (firstNonEmpty(record.email, record.name, record.id, record.account_id, record.chatgpt_account_id)) return true;
         if (firstNonEmpty(record.providerSpecificData?.chatgptAccountId, record.providerSpecificData?.chatgpt_account_id)) return true;
+        if (firstNonEmpty(record.tokens?.account_id, record.meta?.email, record.meta?.chatgpt_account_id, record.meta?.label)) return true;
         if (firstNonEmpty(record.credentials?.email, record.credentials?.chatgpt_account_id, record.extra?.email, record.extra?.chatgpt_account_id)) return true;
         const accessPayload = parseJwtPayload(firstTokenCandidate(record, ['accessToken', 'access_token', 'idToken', 'id_token']));
         return Boolean(extractOpenAIInfo(accessPayload));
@@ -378,6 +385,16 @@ var FlowPilotConverter;
     function emailKey(email) {
         return email ? email.replace(/[.+]/g, '_').toLowerCase() : undefined;
     }
+    function detectSessionSourceType(record) {
+        if (!isPlainObject(record)) return 'chatgpt_web_session';
+        if (record.provider === 'codex' && record.authType === 'oauth') return '9router';
+        if (record.auth_mode && isPlainObject(record.tokens)) return 'axonhub';
+        if (isPlainObject(record.tokens) && isPlainObject(record.meta)) return 'codex_manager';
+        if (isPlainObject(record.tokens) && (record.OPENAI_API_KEY !== undefined || record.last_refresh)) return 'codex_auth';
+        if (isPlainObject(record.credentials) && (record.platform || record.extra)) return 'sub2api';
+        if (record.type === 'codex') return record.account_note ? 'cockpit' : 'cpa';
+        return 'chatgpt_web_session';
+    }
     function pruneEmpty(value) {
         if (Array.isArray(value)) {
             return value.map(item => pruneEmpty(item)).filter(item => item !== undefined && item !== null);
@@ -425,20 +442,22 @@ var FlowPilotConverter;
         const user = isPlainObject(record.user) ? record.user : {};
         const providerData = isPlainObject(record.providerSpecificData) ? record.providerSpecificData : {};
         const credentials = isPlainObject(record.credentials) ? record.credentials : {};
+        const tokens = isPlainObject(record.tokens) ? record.tokens : {};
+        const meta = isPlainObject(record.meta) ? record.meta : {};
         const extra = isPlainObject(record.extra) ? record.extra : {};
         const expiresAt = firstNonEmpty(
             accessPayload ? timestampFromUnixSeconds(accessPayload.exp) : undefined,
             idPayload ? timestampFromUnixSeconds(idPayload.exp) : undefined,
             normalizeTimestamp(record.expires), normalizeTimestamp(record.expiresAt), normalizeTimestamp(record.expired), normalizeTimestamp(record.expires_at),
-            normalizeTimestamp(credentials.expires_at), normalizeTimestamp(extra.expires_at)
+            normalizeTimestamp(credentials.expires_at), normalizeTimestamp(tokens.expires_at), normalizeTimestamp(extra.expires_at)
         );
-        const email = firstNonEmpty(record.email, user.email, credentials.email, extra.email, profile.email, idProfile.email, accessPayload?.email, idPayload?.email);
-        const accountId = firstNonEmpty(record.accountId, record.account_id, record.chatgpt_account_id, credentials.chatgpt_account_id, extra.chatgpt_account_id, providerData.chatgptAccountId, providerData.chatgpt_account_id, auth.chatgpt_account_id, idAuth.chatgpt_account_id, auth.account_id, record.id);
-        const userId = firstNonEmpty(record.userId, record.user_id, record.chatgpt_user_id, user.id, credentials.chatgpt_user_id, extra.chatgpt_user_id, providerData.chatgptUserId, providerData.chatgpt_user_id, auth.chatgpt_user_id, idAuth.chatgpt_user_id, auth.user_id);
-        const planType = firstNonEmpty(record.planType, record.plan_type, record.chatgpt_plan_type, credentials.plan_type, extra.plan_type, providerData.chatgptPlanType, providerData.chatgpt_plan_type, auth.chatgpt_plan_type, idAuth.chatgpt_plan_type);
+        const email = firstNonEmpty(record.email, user.email, credentials.email, tokens.email, meta.email, extra.email, profile.email, idProfile.email, accessPayload?.email, idPayload?.email);
+        const accountId = firstNonEmpty(record.accountId, record.account_id, record.chatgpt_account_id, credentials.chatgpt_account_id, tokens.account_id, meta.chatgpt_account_id, meta.workspace_id, extra.chatgpt_account_id, providerData.chatgptAccountId, providerData.chatgpt_account_id, auth.chatgpt_account_id, idAuth.chatgpt_account_id, auth.account_id, record.id);
+        const userId = firstNonEmpty(record.userId, record.user_id, record.chatgpt_user_id, user.id, credentials.chatgpt_user_id, meta.chatgpt_user_id, extra.chatgpt_user_id, providerData.chatgptUserId, providerData.chatgpt_user_id, auth.chatgpt_user_id, idAuth.chatgpt_user_id, auth.user_id);
+        const planType = firstNonEmpty(record.planType, record.plan_type, record.chatgpt_plan_type, credentials.plan_type, meta.plan_type, extra.plan_type, providerData.chatgptPlanType, providerData.chatgpt_plan_type, auth.chatgpt_plan_type, idAuth.chatgpt_plan_type);
         const exportedAt = normalizeTimestamp(now);
-        const sourceType = record.provider === 'codex' && record.authType === 'oauth' ? '9router' : 'chatgpt_web_session';
-        const name = firstNonEmpty(record.name, user.name, extra.name, email, sourceName, 'ChatGPT Account');
+        const sourceType = detectSessionSourceType(record);
+        const name = firstNonEmpty(record.name, user.name, meta.label, extra.name, email, sourceName, 'ChatGPT Account');
         const syntheticIdToken = inputIdToken ? '' : buildSyntheticCodexIdToken(email, accountId, planType, userId, expiresAt);
         const idToken = firstNonEmpty(inputIdToken, syntheticIdToken);
         const expiresIn = getExpiresInSeconds(expiresAt, now);

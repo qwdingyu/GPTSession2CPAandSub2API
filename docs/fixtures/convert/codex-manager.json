@@ -1,0 +1,19 @@
+{
+  "accounts": [
+    {
+      "tokens": {
+        "access_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjhAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC04IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTgiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+        "refresh_token": "refresh-8",
+        "id_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjhAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC04IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTgiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+        "account_id": "acct-8"
+      },
+      "meta": {
+        "label": "user8@example.com",
+        "chatgpt_account_id": "acct-8",
+        "chatgpt_user_id": "usr-8",
+        "email": "user8@example.com",
+        "plan_type": "plus"
+      }
+    }
+  ]
+}

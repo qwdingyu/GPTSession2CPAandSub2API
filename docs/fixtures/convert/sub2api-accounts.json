@@ -1,0 +1,19 @@
+{
+  "accounts": [
+    {
+      "name": "user3@example.com",
+      "platform": "openai",
+      "type": "oauth",
+      "credentials": {
+        "access_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjNAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC0zIiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTMiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+        "refresh_token": "refresh-3",
+        "chatgpt_account_id": "acct-3",
+        "email": "user3@example.com",
+        "expires_at": "2030-01-01T00:00:00Z"
+      },
+      "extra": {
+        "source": "sub2api"
+      }
+    }
+  ]
+}

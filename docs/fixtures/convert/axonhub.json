@@ -1,0 +1,10 @@
+{
+  "auth_mode": "chatgpt",
+  "last_refresh": "2026-01-01T00:00:00Z",
+  "tokens": {
+    "access_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjdAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC03IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTciLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+    "refresh_token": "__missing_refresh_token__",
+    "id_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjdAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC03IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTciLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+    "account_id": "acct-7"
+  }
+}

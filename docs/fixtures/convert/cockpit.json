@@ -1,0 +1,9 @@
+{
+  "type": "codex",
+  "account_id": "acct-5",
+  "email": "user5@example.com",
+  "id_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjVAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC01IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTUiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+  "access_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjVAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC01IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTUiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+  "refresh_token": "refresh-5",
+  "account_note": "fixture cockpit"
+}

@@ -1,0 +1,17 @@
+{
+  "name": "router-user",
+  "provider": "codex",
+  "authType": "oauth",
+  "credentials": {
+    "client_id": "codex",
+    "access_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjZAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC02IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTYiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+    "refresh_token": "refresh-6",
+    "id_token": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjZAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC02IiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTYiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+    "expires_at": "2030-01-01T00:00:00Z"
+  },
+  "providerSpecificData": {
+    "chatgptAccountId": "acct-6",
+    "chatgptPlanType": "plus"
+  },
+  "isActive": true
+}

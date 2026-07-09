@@ -182,7 +182,8 @@
   function renderAccounts() {
     var items = state.converted;
     if (!items.length) { E.accountBody.innerHTML = '<tr><td colspan="4" class="empty-msg">暂无可转换账号。</td></tr>'; E.accountWrap.style.maxHeight = ''; E.accountWrap.style.overflowY = ''; return; }
-    E.accountBody.innerHTML = items.map(function (item) { return '<tr><td><div class="cell-ell" title="' + esc(item.name) + '">' + esc(item.name||'-') + '</div></td><td><div class="cell-ell" title="' + esc(item.email) + '">' + esc(item.email||'-') + '</div></td><td><div class="cell-ell" title="' + esc(item.expiresAt) + '">' + esc(fmt(item.expiresAt)||'-') + '</div></td><td><div class="cell-ell" title="' + esc(item.sourceType) + '">' + esc(item.sourceType||'-') + '</div></td></tr>'; }).join('');
+    var previewItems = items.slice(0, 200);
+    E.accountBody.innerHTML = previewItems.map(function (item) { return '<tr><td><div class="cell-ell" title="' + esc(item.name) + '">' + esc(item.name||'-') + '</div></td><td><div class="cell-ell" title="' + esc(item.email) + '">' + esc(item.email||'-') + '</div></td><td><div class="cell-ell" title="' + esc(item.expiresAt) + '">' + esc(fmt(item.expiresAt)||'-') + '</div></td><td><div class="cell-ell" title="' + esc(item.sourceType) + '">' + esc(item.sourceType||'-') + '</div></td></tr>'; }).join('') + (items.length > previewItems.length ? '<tr><td colspan="4" class="empty-msg">仅预览前 ' + previewItems.length + ' 条，完整结果仍可复制或下载。</td></tr>' : '');
     E.accountWrap.style.maxHeight = Math.min(items.length * 38, 360) + 'px';
     E.accountWrap.style.overflowY = 'auto';
   }

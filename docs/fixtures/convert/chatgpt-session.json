@@ -1,0 +1,10 @@
+{
+  "user": {
+    "id": "usr-1",
+    "email": "user1@example.com"
+  },
+  "expires": "2030-01-01T00:00:00Z",
+  "accessToken": "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJleHAiOjE4OTM0NTYwMDAsImVtYWlsIjoidXNlcjFAZXhhbXBsZS5jb20iLCJodHRwczovL2FwaS5vcGVuYWkuY29tL2F1dGgiOnsiY2hhdGdwdF9hY2NvdW50X2lkIjoiYWNjdC0xIiwiY2hhdGdwdF91c2VyX2lkIjoidXNyLTEiLCJjaGF0Z3B0X3BsYW5fdHlwZSI6InBsdXMifX0.",
+  "refreshToken": "refresh-1",
+  "sessionToken": "session-1"
+}
