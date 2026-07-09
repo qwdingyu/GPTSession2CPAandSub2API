@@ -5,7 +5,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const converterPath = path.join(__dirname, 'src', 'converter.js');
+const converterPath = path.join(__dirname, 'src', 'core', 'converter.js');
 const converterCode = fs.readFileSync(converterPath, 'utf8');
 
 // Create a global FlowPilotConverter object

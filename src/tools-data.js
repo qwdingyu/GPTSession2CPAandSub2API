@@ -1,4 +1,10 @@
 /* tools-data.js — Curated AI tools catalog */
+var CATALOG_META = {
+  lastCheckedAt: '2026-07-09',
+  policyUrl: 'https://github.com/qwdingyu/GPTSession2CPAandSub2API/blob/main/docs/07_%E5%B7%A5%E5%85%B7%E6%94%B6%E5%BD%95%E6%A0%87%E5%87%86%E4%B8%8E%E6%95%B0%E6%8D%AE%E6%B2%BB%E7%90%86_20260709.md',
+  note: '优先收录官方产品、主流开源项目和有明确使用场景的 AI 工具。'
+};
+
 var CATEGORIES = [
   { id: 'all', label: '全部', icon: '⊞' },
   { id: 'llm', label: 'LLM / 对话', icon: '💬' },
@@ -81,4 +87,9 @@ TOOLS.sort((a, b) => {
   if (a.featured && !b.featured) return -1;
   if (!a.featured && b.featured) return 1;
   return a.name.localeCompare(b.name, 'zh');
+});
+
+TOOLS.forEach((tool) => {
+  if (!tool.lastCheckedAt) tool.lastCheckedAt = CATALOG_META.lastCheckedAt;
+  if (tool.featured && !tool.recommendReason) tool.recommendReason = '按行业认知度、实用性和当前分类代表性推荐。';
 });

@@ -10,7 +10,9 @@
       <div class="card-body">
         <div class="card-name">${esc(t.name)}${t.featured?'<span class="card-badge">推荐</span>':''}</div>
         <div class="card-desc">${esc(t.description)}</div>
+        ${t.recommendReason?`<div class="card-reason">推荐依据：${esc(t.recommendReason)}</div>`:''}
         ${t.tags?'<div class="card-tags">'+t.tags.map(tag=>`<span class="tag">${esc(tag)}</span>`).join('')+'</div>':''}
+        ${t.lastCheckedAt?`<div class="card-checked">核验：${esc(t.lastCheckedAt)}</div>`:''}
       </div>
     </a>`;
   }
@@ -39,6 +41,7 @@
     toolGrid: $('#tool-grid'),
     toolCount: $('#tool-count'),
     emptyState: $('#empty-state'),
+    catalogMeta: $('#catalog-meta'),
   };
 
   /* ── Categories ── */
@@ -193,6 +196,9 @@
   });
 
   /* ── Init ── */
+  if (el.catalogMeta && window.CATALOG_META) {
+    el.catalogMeta.textContent = `${window.CATALOG_META.note || '精选 AI 工具目录。'} 最后核验：${window.CATALOG_META.lastCheckedAt || '未标注'}。`;
+  }
   renderCats();
   renderLocal();
   renderTools();

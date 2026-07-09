@@ -198,6 +198,7 @@ var FlowPilotConverter;
         }
         if (!isPlainObject(value)) return 'unknown';
         if (value.type === 'codex') return 'cpa';
+        if (value.access_token || value.refresh_token || value.session_token) return 'cpa';
         if (Array.isArray(value.accounts)) {
             if (value.accounts.some(acc => isPlainObject(acc) && acc.type === 'codex')) return 'cpa';
             return 'sub';
@@ -245,39 +246,53 @@ var FlowPilotConverter;
             refresh_token: firstNonEmpty(creds.refresh_token, extra.refresh_token),
             session_token: firstNonEmpty(creds.session_token, extra.session_token),
             last_refresh: firstNonEmpty(creds.last_refresh, extra.last_refresh),
+            expires_at: firstNonEmpty(creds.expires_at, creds.expired, extra.expires_at, extra.expired),
             expired: firstNonEmpty(creds.expires_at, creds.expired, extra.expires_at, extra.expired),
+            organization_id: firstNonEmpty(account.organization_id, creds.organization_id, extra.organization_id),
         };
     }
     function normalizeSubAccountToSub(account) {
         if (!isPlainObject(account)) return {};
         const creds = account.credentials || {};
         const extra = account.extra || {};
+        const knownTopLevelKeys = ['name', 'platform', 'type', 'concurrency', 'priority', 'credentials', 'extra', 'email', 'access_token', 'refresh_token', 'session_token', 'id_token', 'chatgpt_account_id', 'account_id', 'chatgpt_user_id', 'expired', 'expires_at', 'expires_in', 'plan_type', 'organization_id', 'created_at', 'updated_at'];
+        const extraFields = pickUnknownKeys(account, knownTopLevelKeys) || {};
+        const credentials = {
+            access_token: firstNonEmpty(creds.access_token, account.access_token, extra.access_token),
+            refresh_token: firstNonEmpty(creds.refresh_token, account.refresh_token, extra.refresh_token),
+            session_token: firstNonEmpty(creds.session_token, account.session_token, extra.session_token),
+            id_token: firstNonEmpty(creds.id_token, account.id_token, extra.id_token),
+            chatgpt_account_id: firstNonEmpty(creds.chatgpt_account_id, account.chatgpt_account_id, extra.chatgpt_account_id, account.account_id, creds.account_id),
+            chatgpt_user_id: firstNonEmpty(creds.chatgpt_user_id, account.chatgpt_user_id, extra.chatgpt_user_id, creds.user_id),
+            email: firstNonEmpty(creds.email, account.email, extra.email),
+            expires_at: firstNonEmpty(creds.expires_at, creds.expired, account.expired, account.expires_at, extra.expires_at, extra.expired, account.expires_in),
+            expires_in: toNonNegativeNumber(creds.expires_in, Number.isFinite(Number(account.expires_in)) ? Number(account.expires_in) : undefined),
+            plan_type: firstNonEmpty(creds.plan_type, account.plan_type, extra.plan_type),
+        };
+        for (const [key, value] of Object.entries(creds)) {
+            if (!hasOwn(credentials, key)) credentials[key] = deepClone(value);
+        }
         return {
             name: firstNonEmpty(account.name, extra.name, creds.email, extra.email, account.email),
             platform: 'openai',
             type: 'oauth',
             concurrency: toNonNegativeInt(account.concurrency, 10),
             priority: toNonNegativeInt(account.priority, 1),
-            credentials: {
-                access_token: firstNonEmpty(creds.access_token, account.access_token, extra.access_token),
-                chatgpt_account_id: firstNonEmpty(creds.chatgpt_account_id, account.chatgpt_account_id, extra.chatgpt_account_id, account.account_id, creds.account_id),
-                chatgpt_user_id: firstNonEmpty(creds.chatgpt_user_id, account.chatgpt_user_id, extra.chatgpt_user_id, creds.user_id),
-                email: firstNonEmpty(creds.email, account.email, extra.email),
-                expires_at: firstNonEmpty(creds.expires_at, creds.expired, account.expired, account.expires_at, extra.expires_at, extra.expired),
-                expires_in: toNonNegativeNumber(creds.expires_in, undefined),
-                plan_type: firstNonEmpty(creds.plan_type, account.plan_type, extra.plan_type),
-            },
-            extra: { email: firstNonEmpty(creds.email, account.email, extra.email), name: firstNonEmpty(account.name, extra.name, creds.email, extra.email) },
+            credentials,
+            organization_id: firstNonEmpty(account.organization_id, creds.organization_id, extra.organization_id),
+            created_at: firstNonEmpty(account.created_at, extra.created_at),
+            updated_at: firstNonEmpty(account.updated_at, extra.updated_at),
+            extra: { ...extraFields, email: firstNonEmpty(creds.email, account.email, extra.email), name: firstNonEmpty(account.name, extra.name, creds.email, extra.email) },
         };
     }
     function convertCpaPayload(payload, options) {
         const mode = options?.mode || 'lossless';
         const now = options?.now ? new Date(options.now) : new Date();
         const sourceName = asString(options?.sourceName || 'payload');
-        const accounts = Array.isArray(payload) ? payload : (isPlainObject(payload) && Array.isArray(payload.accounts) ? payload.accounts : (isPlainObject(payload) && payload.type === 'codex' ? [payload] : []));
+        const accounts = Array.isArray(payload) ? payload : (isPlainObject(payload) && Array.isArray(payload.accounts) ? payload.accounts : (isPlainObject(payload) && (payload.type === 'codex' || payload.access_token || payload.refresh_token || payload.session_token) ? [payload] : []));
         const records = accounts.map(account => normalizeSubAccountToSub(account)).filter(record => Object.keys(record).length > 0);
         const result = records.length === 1 ? records[0] : records;
-        const baseRecord = { type: 'codex', generatedAt: now.toISOString(), sourceName, mode };
+        const baseRecord = { generatedAt: now.toISOString(), sourceName, mode };
         if (mode === 'lossless') baseRecord['original'] = deepClone(payload);
         return { ...(isPlainObject(result) ? result : { payload: result }), ...baseRecord };
     }

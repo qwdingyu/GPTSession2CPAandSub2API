@@ -151,6 +151,9 @@ tr:hover td{background:rgba(79,181,196,.06)}
 .notice.show{display:block}
 .notice code{font-family:var(--mono);font-size:.76rem;background:rgba(200,160,74,.12);padding:1px 4px;border-radius:3px}
 
+/* ── Sensitive output warning ── */
+.sensitive-output-warning{margin:0 0 9px;padding:8px 10px;border:1px solid rgba(200,160,74,.32);border-radius:var(--radius-sm);background:rgba(200,160,74,.1);color:var(--warning);font-size:.8rem;line-height:1.45}
+
 /* ── Progress ── */
 .progress-wrap{margin:7px 0;display:none}
 .progress-wrap.show{display:block}

@@ -1,0 +1,16 @@
+{
+  "name": "gptsession2cpaandsub2api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "test": "node test-converter.js",
+    "check:static": "node scripts/check-static-site.js",
+    "verify:domain": "node scripts/verify-domain.js",
+    "deploy": "wrangler deploy",
+    "deploy:ci": "npm test && npm run check:static && npm run deploy && npm run verify:domain"
+  },
+  "devDependencies": {
+    "wrangler": "4.107.1"
+  }
+}

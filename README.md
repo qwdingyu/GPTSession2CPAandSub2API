@@ -4,9 +4,9 @@
 
 ## 在线使用
 
-### [**Cloudflare Pages 试点地址**](https://gptsession2cpaandsub2api.mailforwdy.workers.dev/)
+### [**生产地址：AI Forge**](https://ai.eforge.xyz/)
 
-### [**》》 点我直接使用 《《**](https://json.chatai.codes/)
+备用 Workers 地址：<https://gptsession2cpaandsub2api.mailforwdy.workers.dev/>
 
 ## 使用提示
 
@@ -63,38 +63,45 @@ docs/BROWSER_TESTING.md
 
 该指南包含单文件/批量转换、边界情况和控制台无错误的检查步骤。
 
-## Cloudflare Pages 部署
+## 自动化部署目标
 
-本项目现支持直接部署到 Cloudflare Pages：
+本项目的部署目标是：**push 到 `main` 后，由 GitHub Actions 自动部署到 Cloudflare Workers，并验证生产域名 `https://ai.eforge.xyz/`。**
 
-```text
-Project: GPTSession2CPAandSub2API
-Framework preset: None / Static assets
-Build command: 留空
-Build output directory: src
-```
-
-仓库内 `wrangler.jsonc` 已改为 Pages 资产托管配置，`src/_headers` 已提供基础安全头。后续推荐在 Cloudflare Dashboard 中进入 Pages 项目的 `Settings -> Builds`，连接 GitHub 仓库，让 `main` 分支每次 push 自动触发 Pages 构建。
-
-## Cloudflare Workers 部署（历史/替代方案）
-
-本项目当前线上地址运行在 Cloudflare Workers：
+部署链路固定为：
 
 ```text
-https://gptsession2cpaandsub2api.mailforwdy.workers.dev/
+npm ci -> npm test -> npm run check:static -> wrangler deploy -> npm run verify:domain
 ```
 
-若仍需通过 Workers 部署，需单独保留一份 Worker 部署配置；仓库内当前的 `wrangler.jsonc` 已改为 Pages 资产托管配置，**不再适用于 Workers**。
+GitHub Actions 需要配置 1 个仓库 Secret：
 
-Worker 部署参考配置：
+```text
+CLOUDFLARE_API_TOKEN
+```
+
+`CLOUDFLARE_API_TOKEN` 应使用权限受限的 Cloudflare API Token，满足部署目标 Worker 的权限即可。不要使用 Node 20 逃生变量，也不要依赖本地临时命令作为常规发布流程。
+
+## Cloudflare Workers 配置
+
+仓库内 `wrangler.jsonc` 是 Cloudflare Workers Static Assets 的唯一部署配置：
 
 ```text
 Worker name: gptsession2cpaandsub2api
-Git repository: qwdingyu/GPTSession2CPAandSub2API
-Branch: main
-Build command: 留空
-Deploy command: npx wrangler deploy
 Static assets directory: src
+Production domain: https://ai.eforge.xyz/
 ```
 
-`src/_headers` 已添加基础安全头，重点是通过 CSP 禁止页面发起网络请求，强化“不上传 token”的上线约束。后续推荐在 Cloudflare Dashboard 中进入该 Worker 的 `Settings -> Builds`，连接 GitHub 仓库，让 `main` 分支每次 push 自动触发 Workers Builds。
+`src/_headers` 提供基础安全头，重点是通过 CSP `connect-src 'none'` 禁止页面发起网络请求，强化“不上传 token”的上线约束。
+
+## 本地验证（非发布入口）
+
+本地命令只用于开发前自检，不作为常规生产发布入口：
+
+```bash
+npm ci
+npm test
+npm run check:static
+npm run verify:domain
+```
+
+如果需要人工应急部署，可运行 `npm run deploy`，但修复完成后仍应回到 GitHub Actions，让 `main` 分支自动部署和验证成为唯一长期流程。

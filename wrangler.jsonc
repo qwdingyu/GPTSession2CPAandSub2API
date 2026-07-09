@@ -1,6 +1,9 @@
 {
   "name": "gptsession2cpaandsub2api",
   "compatibility_date": "2026-05-24",
+
+  // 仅托管静态文件，不声明 Worker fetch 逻辑、KV、D1 或远程 API 绑定。
+  // 这样可以最大限度兑现“浏览器本地处理、token 不上传服务器”的产品承诺。
   "assets": {
     "directory": "./src",
     "html_handling": "auto-trailing-slash",

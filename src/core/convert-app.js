@@ -363,7 +363,7 @@
       /* per-file download */
       state.converted.forEach(function (item, idx) {
         var single = JSON.stringify(buildSingle(item), null, 2);
-        var safe = (item.name || item.email || "account" + (idx + 1)).replace(/[^a-zA-Z0-9_.\-]/g, "_");
+        var safe = "account_" + String(idx + 1).padStart(2, "0");
         setTimeout(function () { dl(single, safe + "_" + state.format + ".json"); }, idx * 300);
       });
     } else {
