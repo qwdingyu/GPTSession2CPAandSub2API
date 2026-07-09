@@ -706,6 +706,14 @@ var FlowPilotConverter;
             if (!item.expiresAt) missingExpiresAt += 1;
             if (!item.accountId) missingAccountId += 1;
         }
+        const attentionItems = [
+            { key: 'missingRefreshToken', label: '缺少 refresh_token', count: missingRefreshToken, severity: 'warn', action: '可导出，但无法用于需要刷新 token 的长期账号池；建议重新获取完整登录态。' },
+            { key: 'syntheticIdToken', label: '合成 id_token', count: syntheticIdToken, severity: 'info', action: '可导出，CPA/Cockpit/AxonHub/Codex-Manager 会使用占位 claims；若目标系统强校验真实 id_token，需重新获取。' },
+            { key: 'missingExpiresAt', label: '缺少过期时间', count: missingExpiresAt, severity: 'info', action: '可导出，但无法提前判断失效时间；导入后应优先人工确认。' },
+            { key: 'missingAccountId', label: '缺少 accountId', count: missingAccountId, severity: 'warn', action: '可导出，但账号去重和分组可能不稳定；建议补充或使用带账号 claims 的 token。' },
+        ].filter(item => item.count > 0);
+        const ready = Math.max(0, items.length - Math.max(missingRefreshToken, missingAccountId));
+        const needsReview = items.length - ready;
         return {
             total: items.length,
             skipped: Array.isArray(skipped) ? skipped.length : 0,
@@ -714,6 +722,10 @@ var FlowPilotConverter;
             syntheticIdToken,
             missingExpiresAt,
             missingAccountId,
+            ready,
+            needsReview,
+            attentionItems,
+            quality: needsReview === 0 && (!Array.isArray(skipped) || skipped.length === 0) ? 'ready' : 'review',
         };
     }
     function parseSessionPayload(textOrPayload, options) {

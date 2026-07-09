@@ -297,6 +297,9 @@ try {
   assert(result.skipped.length === 0, `no skipped records in generated batch`);
   assert(result.report.total === 5000, `compatibility report counts total records`);
   assert(result.report.syntheticIdToken === 5000, `compatibility report counts synthetic id tokens`);
+  assert(result.report.ready === 5000, `compatibility report counts ready records`);
+  assert(result.report.needsReview === 0, `compatibility report counts review records`);
+  assert(result.report.quality === 'ready', `compatibility report marks complete batch ready`);
   assert(Date.now() - startedAt < 5000, `large batch completes under 5s in Node test`);
 } catch (e) {
   console.log(`  FAIL: ${e.message}\n`);
@@ -346,6 +349,19 @@ try {
   assert(zipBuffer.includes(Buffer.from('account_01_sub2api.json')), `ZIP contains first entry name`);
   assert(zipBuffer.includes(Buffer.from('nested/account_02_sub2api.json')), `ZIP contains nested entry name`);
   assert(zipBuffer.includes(Buffer.from('{"account":1}')), `ZIP contains first JSON payload`);
+} catch (e) {
+  console.log(`  FAIL: ${e.message}\n`);
+  failCount++;
+}
+
+// Test 14: compatibility report actionable grouping
+console.log('Test 14: compatibility report actionable grouping');
+try {
+  const partial = FlowPilotConverter.parseSessionPayload(JSON.stringify({ accessToken: makeJwt(99), user: { email: 'partial@example.com' } }), { sourceName: 'partial.json' });
+  assert(partial.report.quality === 'review', `partial account marked for review`);
+  assert(partial.report.missingRefreshToken === 1, `missing refresh_token counted`);
+  assert(partial.report.attentionItems.some(item => item.key === 'missingRefreshToken'), `missing refresh_token action item present`);
+  assert(partial.report.sourceTypes.chatgpt_web_session === 1, `source type grouped`);
 } catch (e) {
   console.log(`  FAIL: ${e.message}\n`);
   failCount++;

@@ -190,17 +190,25 @@
 
   function renderIssues() {
     var report = state.report;
-    var messages = [];
-    if (report && report.total) {
-      if (report.missingRefreshToken) messages.push('缺少 refresh_token：' + report.missingRefreshToken + ' 个（部分目标格式会保留空值或占位值）');
-      if (report.syntheticIdToken) messages.push('合成 id_token：' + report.syntheticIdToken + ' 个');
-      if (report.missingExpiresAt) messages.push('缺少 expiresAt：' + report.missingExpiresAt + ' 个');
-      if (report.missingAccountId) messages.push('缺少 accountId：' + report.missingAccountId + ' 个');
-    }
-    state.skipped.forEach(function (s) { messages.push(esc(s.sourceName||'input') + ' ' + esc(s.path||'') + ': ' + esc(s.reason)); });
-    if (!messages.length) { E.issues.classList.remove('show'); E.issues.textContent = ''; return; }
+    var hasReport = report && report.total;
+    var hasSkipped = state.skipped.length > 0;
+    if (!hasReport && !hasSkipped) { E.issues.classList.remove('show'); E.issues.textContent = ''; return; }
     E.issues.classList.add('show');
-    E.issues.innerHTML = messages.map(function (message) { return '<div>' + message + '</div>'; }).join('');
+    var html = '';
+    if (hasReport) {
+      var sourceHtml = Object.keys(report.sourceTypes || {}).map(function (key) { return '<span class="quality-chip">' + esc(key) + '：' + report.sourceTypes[key] + '</span>'; }).join('');
+      var attentionHtml = report.attentionItems && report.attentionItems.length
+        ? report.attentionItems.map(function (item) { return '<li class="quality-' + esc(item.severity) + '"><strong>' + esc(item.label) + '：' + item.count + ' 个</strong><span>' + esc(item.action) + '</span></li>'; }).join('')
+        : '<li class="quality-ok"><strong>结构完整</strong><span>未发现必须人工关注的缺字段项。</span></li>';
+      html += '<div class="quality-head"><strong>导入质量报告</strong><span>' + (report.quality === 'ready' ? '可直接导入' : '建议导入前复核') + '</span></div>';
+      html += '<div class="quality-grid"><div><b>' + report.total + '</b><span>成功账号</span></div><div><b>' + report.ready + '</b><span>结构较完整</span></div><div><b>' + report.needsReview + '</b><span>需关注</span></div><div><b>' + report.skipped + '</b><span>跳过项</span></div></div>';
+      if (sourceHtml) html += '<div class="quality-sources">' + sourceHtml + '</div>';
+      html += '<ul class="quality-list">' + attentionHtml + '</ul>';
+    }
+    if (hasSkipped) {
+      html += '<details class="quality-skipped"><summary>跳过详情（' + state.skipped.length + '）</summary>' + state.skipped.map(function (s) { return '<div>' + esc(s.sourceName||'input') + ' ' + esc(s.path||'') + ': ' + esc(s.reason) + '</div>'; }).join('') + '</details>';
+    }
+    E.issues.innerHTML = html;
   }
 
   function renderPreview(text) {
