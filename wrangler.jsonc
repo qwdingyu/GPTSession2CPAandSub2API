@@ -1,5 +1,4 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
   "name": "gptsession2cpaandsub2api",
   "compatibility_date": "2026-05-24",
   "assets": {
