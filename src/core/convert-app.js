@@ -14,9 +14,9 @@
     });
   });
 
-  var state = { format: 'sub2api', sessions: [], converted: [], skipped: [], outputText: '' };
+  var state = { format: 'sub2api', sessions: [], converted: [], skipped: [], report: null, outputText: '' };
   var dlMode = 'single';
-  var FORMATS = { sub2api: 'sub2api', cpa: 'CPA', cockpit: 'Cockpit', '9router': '9router', codexAuth: 'Codex auth.json' };
+  var FORMATS = { sub2api: 'sub2api', cpa: 'CPA', cockpit: 'Cockpit', '9router': '9router', codexAuth: 'Codex auth.json', axonHub: 'AxonHub', codexManager: 'Codex-Manager' };
 
   var E = {
     downloadOptions: document.querySelector('#download-options'),
@@ -147,6 +147,8 @@
       case 'cpa':       { var r = c.map(function (x) { return x.cpa; }); return r.length === 1 ? r[0] : { accounts: r, generatedAt: new Date().toISOString() }; }
       case 'cockpit':   { var r = c.map(function (x) { return x.cockpit; }); return r.length === 1 ? r[0] : { accounts: r, generatedAt: new Date().toISOString() }; }
       case 'codexAuth': return c.length === 1 ? c[0].codexAuth : { tokens: c.map(function (x) { return x.codexAuth.tokens; }), generatedAt: new Date().toISOString() };
+      case 'axonHub':   return c.length === 1 ? c[0].axonHubAuth : { accounts: c.map(function (x) { return x.axonHubAuth; }), generatedAt: new Date().toISOString() };
+      case 'codexManager': return { accounts: c.map(function (x) { return x.codexManagerAccount; }), generatedAt: new Date().toISOString() };
       case '9router':   { var r = c.map(function (x) { return x.nineRouterAccount || x.sub2apiAccount; }); return r.length === 1 ? r[0] : r; }
       default:          { var r = c.map(function (x) { return x.sub2apiAccount; }); return r.length === 1 ? r[0] : r; }
     }
@@ -172,7 +174,7 @@
           if (E.dlCount && showDl) E.dlCount.textContent = state.converted.length + ' 个账号';
         }
     if (E.outputSubtitle) E.outputSubtitle.textContent = '当前输出为 ' + label + ' 导入 JSON。';
-    E.notice.classList.toggle('show', state.format === 'cpa' || state.format === 'cockpit' || state.format === 'codexAuth');
+    E.notice.classList.toggle('show', state.format === 'cpa' || state.format === 'cockpit' || state.format === 'codexAuth' || state.format === 'axonHub' || state.format === 'codexManager');
     renderAccounts(); renderIssues(); renderPreview(state.outputText);
     st(E.outputStatus, has ? '已生成 ' + state.converted.length + ' 个账号。' : '暂无输出。', has ? 'ok' : (state.skipped.length ? 'error' : ''));
   }
@@ -186,9 +188,18 @@
   }
 
   function renderIssues() {
-    if (!state.skipped.length) { E.issues.classList.remove('show'); E.issues.textContent = ''; return; }
+    var report = state.report;
+    var messages = [];
+    if (report && report.total) {
+      if (report.missingRefreshToken) messages.push('缺少 refresh_token：' + report.missingRefreshToken + ' 个（部分目标格式会保留空值或占位值）');
+      if (report.syntheticIdToken) messages.push('合成 id_token：' + report.syntheticIdToken + ' 个');
+      if (report.missingExpiresAt) messages.push('缺少 expiresAt：' + report.missingExpiresAt + ' 个');
+      if (report.missingAccountId) messages.push('缺少 accountId：' + report.missingAccountId + ' 个');
+    }
+    state.skipped.forEach(function (s) { messages.push(esc(s.sourceName||'input') + ' ' + esc(s.path||'') + ': ' + esc(s.reason)); });
+    if (!messages.length) { E.issues.classList.remove('show'); E.issues.textContent = ''; return; }
     E.issues.classList.add('show');
-    E.issues.innerHTML = state.skipped.map(function (s) { return '<div>' + esc(s.sourceName||'input') + ' ' + esc(s.path||'') + ': ' + esc(s.reason) + '</div>'; }).join('');
+    E.issues.innerHTML = messages.map(function (message) { return '<div>' + message + '</div>'; }).join('');
   }
 
   function renderPreview(text) {
@@ -210,17 +221,19 @@
 
   async function convert() {
     var text = E.input.value;
-    if (!text.trim()) { state.converted = []; state.skipped = []; state.sessions = []; updateOutput(); st(E.inputStatus, '等待输入。'); return; }
+    if (!text.trim()) { state.converted = []; state.skipped = []; state.sessions = []; state.report = null; updateOutput(); st(E.inputStatus, '等待输入。'); return; }
     st(E.inputStatus, '正在解析...');
     try {
       var r = await parseInWorker(text, 'pasted-json');
-      state.converted = r.converted; state.skipped = r.skipped; state.sessions = r.found; updateOutput();
+      state.converted = r.converted; state.skipped = r.skipped; state.sessions = r.found; state.report = r.report || FlowPilotConverter.buildSessionCompatibilityReport(r.converted, r.skipped); updateOutput();
       st(E.inputStatus, r.converted.length ? '解析完成：' + r.converted.length + ' 个账号，跳过 ' + r.skipped.length + ' 项。' : '没有可转换账号。', r.converted.length ? 'ok' : 'error');
-    } catch (err) { state.converted = []; state.skipped = [{ sourceName: 'pasted-json', path: '$', reason: err.message }]; state.outputText = ''; updateOutput(); st(E.inputStatus, err.message, 'error'); }
+    } catch (err) { state.converted = []; state.skipped = [{ sourceName: 'pasted-json', path: '$', reason: err.message }]; state.report = null; state.outputText = ''; updateOutput(); st(E.inputStatus, err.message, 'error'); }
   }
 
   document.querySelector('#pick-files').addEventListener('click', function () { document.querySelector('#file-input').click(); });
   document.querySelector('#file-input').addEventListener('change', function (e) { readFiles(e.target.files); e.target.value = ''; });
+  document.querySelector('#pick-folder').addEventListener('click', function () { document.querySelector('#folder-input').click(); });
+  document.querySelector('#folder-input').addEventListener('change', function (e) { readFiles(e.target.files); e.target.value = ''; });
 
   async function readFiles(files) {
     var jf = Array.from(files).filter(function (f) { return f.name.toLowerCase().endsWith('.json'); });
@@ -254,6 +267,8 @@
       case "cpa": return item.cpa;
       case "cockpit": return item.cockpit;
       case "codexAuth": return item.codexAuth;
+      case "axonHub": return item.axonHubAuth;
+      case "codexManager": return item.codexManagerAccount;
       case "9router": return item.nineRouterAccount || item.sub2apiAccount;
       default: return item.sub2apiAccount;
     }

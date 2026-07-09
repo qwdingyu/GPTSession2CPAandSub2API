@@ -483,6 +483,35 @@ var FlowPilotConverter;
             account_id: accountId,
         });
         const codexAuth = { OPENAI_API_KEY: null, tokens: codexTokens, last_refresh: exportedAt };
+        const axonHubAuth = {
+            auth_mode: 'chatgpt',
+            last_refresh: exportedAt,
+            tokens: pruneEmpty({
+                access_token: accessToken,
+                refresh_token: refreshToken || '__missing_refresh_token__',
+                id_token: idToken,
+                account_id: accountId,
+            }),
+        };
+        const codexManagerAccount = pruneEmpty({
+            tokens: {
+                access_token: accessToken,
+                refresh_token: refreshToken || '',
+                id_token: idToken,
+                account_id: accountId,
+            },
+            meta: {
+                label: firstNonEmpty(name, email, accountId, sourceName),
+                workspace_id: accountId,
+                chatgpt_account_id: accountId,
+                chatgpt_user_id: userId,
+                email,
+                plan_type: planType,
+                note: firstNonEmpty(record.account_note, record.accountInfo, record.account_info, record.note, record.notes, record.remark),
+                source: sourceType,
+                last_refresh: exportedAt,
+            },
+        });
         const sub2apiAccount = pruneEmpty({
             name,
             platform: 'openai',
@@ -532,7 +561,31 @@ var FlowPilotConverter;
                 updated_at: updatedAt,
             },
         });
-        return { name, email, expiresAt, planType, accountId, userId, sourceName, sourcePath: options?.sourcePath, sourceType, accessToken, sessionToken, refreshToken, idToken, syntheticIdToken: Boolean(syntheticIdToken), cpa, cockpit, codexAuth, sub2apiAccount, nineRouterAccount };
+        return { name, email, expiresAt, planType, accountId, userId, sourceName, sourcePath: options?.sourcePath, sourceType, accessToken, sessionToken, refreshToken, idToken, syntheticIdToken: Boolean(syntheticIdToken), cpa, cockpit, codexAuth, axonHubAuth, codexManagerAccount, sub2apiAccount, nineRouterAccount };
+    }
+    function buildSessionCompatibilityReport(converted, skipped) {
+        const items = Array.isArray(converted) ? converted : [];
+        const sourceTypes = {};
+        let missingRefreshToken = 0;
+        let syntheticIdToken = 0;
+        let missingExpiresAt = 0;
+        let missingAccountId = 0;
+        for (const item of items) {
+            sourceTypes[item.sourceType || 'unknown'] = (sourceTypes[item.sourceType || 'unknown'] || 0) + 1;
+            if (!item.refreshToken) missingRefreshToken += 1;
+            if (item.syntheticIdToken) syntheticIdToken += 1;
+            if (!item.expiresAt) missingExpiresAt += 1;
+            if (!item.accountId) missingAccountId += 1;
+        }
+        return {
+            total: items.length,
+            skipped: Array.isArray(skipped) ? skipped.length : 0,
+            sourceTypes,
+            missingRefreshToken,
+            syntheticIdToken,
+            missingExpiresAt,
+            missingAccountId,
+        };
     }
     function parseSessionPayload(textOrPayload, options) {
         const onProgress = typeof options?.onProgress === 'function' ? options.onProgress : undefined;
@@ -557,7 +610,7 @@ var FlowPilotConverter;
             }
         }
         if (onProgress) onProgress(95, '生成输出...');
-        return { converted, skipped, found };
+        return { converted, skipped, found, report: buildSessionCompatibilityReport(converted, skipped) };
     }
 
     function countAccountsInResult(result) {
@@ -635,6 +688,7 @@ var FlowPilotConverter;
     FlowPilotConverter.convertSubPayload = convertSubPayload;
     FlowPilotConverter.findSessionCandidates = findSessionCandidates;
     FlowPilotConverter.normalizeSessionRecord = normalizeSessionRecord;
+    FlowPilotConverter.buildSessionCompatibilityReport = buildSessionCompatibilityReport;
     FlowPilotConverter.parseSessionPayload = parseSessionPayload;
     FlowPilotConverter.countAccountsInResult = countAccountsInResult;
     FlowPilotConverter.escapeHtml = escapeHtml;

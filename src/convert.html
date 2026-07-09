@@ -18,7 +18,7 @@
       <p class="eyebrow"><a href="index.html">← AI Forge</a> / Local JSON Converter</p>
       <h1>ChatGPT Session Converter</h1>
       <div class="title-targets" aria-label="支持输出格式">
-        <span>CPA</span><span>sub2api</span><span>Cockpit</span><span>9router</span><span>Codex auth.json</span>
+        <span>CPA</span><span>sub2api</span><span>Cockpit</span><span>9router</span><span>Codex</span><span>AxonHub</span><span>Codex-Manager</span>
       </div>
     </div>
     <div class="meta-row" aria-label="处理方式">
@@ -57,6 +57,8 @@
         <button type="button" data-format="cockpit" aria-pressed="false">Cockpit</button>
         <button type="button" data-format="9router" aria-pressed="false">9router</button>
         <button type="button" data-format="codexAuth" aria-pressed="false">Codex</button>
+        <button type="button" data-format="axonHub" aria-pressed="false">AxonHub</button>
+        <button type="button" data-format="codexManager" aria-pressed="false">Codex-Manager</button>
       </div>
     </div>
 
@@ -74,8 +76,10 @@
               <p class="warning">⚠️ 包含 accessToken，等同密码，请勿发给他人。</p>
             </div>
             <input class="hidden" id="file-input" type="file" accept=".json,application/json" multiple>
+            <input class="hidden" id="folder-input" type="file" accept=".json,application/json" multiple webkitdirectory directory>
             <div class="input-actions">
               <button class="btn btn-secondary" id="pick-files">📂 选择文件</button>
+              <button class="btn btn-secondary" id="pick-folder">🗂 选择文件夹</button>
               <button class="btn btn-secondary" id="load-example">📄 填入示例</button>
               <span class="spacer"></span>
               <button class="btn btn-ghost" id="clear-input">清空</button>
@@ -97,7 +101,7 @@
             </div>
           </div>
           <div class="panel-body">
-            <p class="notice" id="cpa-notice">ChatGPT Web session 一般没有 <code>refresh_token</code>；CPA/Cockpit 缺少真实 <code>id_token</code> 时会构造占位 claims。</p>
+            <p class="notice" id="cpa-notice">ChatGPT Web session 一般没有 <code>refresh_token</code>；CPA/Cockpit/AxonHub/Codex-Manager 缺少真实 <code>id_token</code> 时会构造占位 claims。</p>
 
             <div class="progress-wrap" id="progress-wrap">
               <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -172,7 +176,7 @@
         <ol>
           <li><strong>粘贴 JSON</strong> — 复制 <code>chatgpt.com/api/auth/session</code> 的返回内容，粘贴到输入框</li>
           <li><strong>拖入文件</strong> — 将一个或多个 JSON 文件拖到输入框区域</li>
-          <li><strong>选择文件</strong> — 点击"选择文件"按钮，选中 JSON 文件</li>
+          <li><strong>选择文件/文件夹</strong> — 选择一个或多个 JSON 文件，也可选择包含批量账号的文件夹</li>
         </ol>
         <h3>输出格式</h3>
         <ul>
@@ -181,6 +185,8 @@
           <li><strong>Cockpit</strong> — 简化的账号管理格式</li>
           <li><strong>9router</strong> — 9router 路由项目导入格式</li>
           <li><strong>Codex auth.json</strong> — Codex CLI 本地认证文件</li>
+          <li><strong>AxonHub</strong> — AxonHub Codex auth.json 结构</li>
+          <li><strong>Codex-Manager</strong> — Codex-Manager 批量导入结构</li>
         </ul>
         <p><strong>ChatGPT Session Converter</strong> 纯浏览器端工具，所有数据在浏览器本地处理，<strong>不会上传到任何服务器</strong>。</p>
         <!-- <p><a href="https://github.com/qwdingyu/GPTSession2CPAandSub2API" target="_blank" rel="noreferrer">GitHub 开源</a></p> -->

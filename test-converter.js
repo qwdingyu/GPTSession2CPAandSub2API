@@ -249,6 +249,9 @@ try {
   assert(item.sub2apiAccount.credentials.access_token === item.accessToken, `sub2api access_token generated`);
   assert(item.nineRouterAccount.credentials.client_id === 'codex', `9router has codex client_id`);
   assert(item.codexAuth.tokens.access_token === item.accessToken, `Codex auth tokens generated`);
+  assert(item.axonHubAuth.auth_mode === 'chatgpt', `AxonHub auth_mode generated`);
+  assert(item.axonHubAuth.tokens.refresh_token === 'refresh-1', `AxonHub refresh_token generated`);
+  assert(item.codexManagerAccount.meta.chatgpt_account_id === item.accountId, `Codex-Manager meta generated`);
   assert(item.syntheticIdToken === true, `synthetic id_token generated when source lacks id_token`);
 } catch (e) {
   console.log(`  FAIL: ${e.message}\n`);
@@ -289,6 +292,8 @@ try {
   const result = FlowPilotConverter.parseSessionPayload(JSON.stringify(payload), { sourceName: 'large.json' });
   assert(result.converted.length === 5000, `5000 sessions converted`);
   assert(result.skipped.length === 0, `no skipped records in generated batch`);
+  assert(result.report.total === 5000, `compatibility report counts total records`);
+  assert(result.report.syntheticIdToken === 5000, `compatibility report counts synthetic id tokens`);
   assert(Date.now() - startedAt < 5000, `large batch completes under 5s in Node test`);
 } catch (e) {
   console.log(`  FAIL: ${e.message}\n`);
