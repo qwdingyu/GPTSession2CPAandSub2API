@@ -91,6 +91,14 @@
           <div class="local-card-desc">把任务目标整理成 Agent brief、规则片段、Issue 草稿、验收标准和验证清单，避免 Agent 跑偏。</div>
           <span class="local-card-action">打开工具</span>
         </div>
+      </a>
+      <a class="local-card" href="./evaluate.html" target="_self">
+        <div class="local-card-icon">🧪</div>
+        <div class="local-card-body">
+          <div class="local-card-name">AI Output Evaluator</div>
+          <div class="local-card-desc">本地评估 Agent 输出是否覆盖需求、包含验证证据、说明剩余风险，帮助判断结果能否采纳。</div>
+          <span class="local-card-action">打开工具</span>
+        </div>
       </a>`;
   }
 

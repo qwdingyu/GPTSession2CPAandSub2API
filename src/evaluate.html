@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AI Output Evaluator — AI Forge</title>
+<meta name="description" content="本地评估 AI/Agent 输出是否覆盖需求、具备验证证据、风险说明和可执行结构。">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any">
+<link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./tools/evaluate.css">
+</head>
+<body>
+<header class="nav-header"><div class="wrap"><a class="brand" href="./index.html"><span class="brand-mark">⚒</span><span class="brand-text">AI Forge</span><span class="brand-sub">— AI Output Evaluator</span></a></div></header>
+<main class="wrap eval-wrap">
+  <section class="eval-hero"><p class="eyebrow">本地优先 · 输出质量评估</p><h1>AI Output Evaluator</h1><p>粘贴原始任务、需求清单和 AI 输出，基于本地 checklist 判断是否可采纳、是否缺验证证据、是否遗漏约束。不会上传内容，也不调用模型。</p></section>
+  <section class="eval-grid">
+    <div class="eval-panel"><h2>1. 输入</h2><label>原始任务</label><textarea id="task" class="eval-textarea" placeholder="粘贴交给 Agent 的原始任务。"></textarea><label>明确需求/验收标准（一行一条）</label><textarea id="requirements" class="eval-textarea small" placeholder="例如：npm test 通过\n生产域名可访问\n文档已更新"></textarea><label>AI / Agent 输出</label><textarea id="output" class="eval-textarea large" placeholder="粘贴 AI 最终回复、执行报告或 PR 说明。"></textarea><div class="actions-row"><button class="btn-main" id="run-eval">开始评估</button><button class="btn-ghost" id="clear-eval">清空</button></div><div class="status-line" id="eval-status">等待输入。</div></div>
+    <div class="eval-panel"><h2>2. 评估结果</h2><div class="score-card"><b id="score">0</b><span id="verdict">未评估</span></div><div id="findings" class="findings">评估后显示发现项。</div><div class="actions-row"><button class="btn-main" id="copy-report" disabled>复制报告</button><button class="btn-ghost" id="download-report" disabled>下载 .md</button></div></div>
+  </section>
+  <section class="eval-panel"><h2>3. Markdown 报告</h2><pre id="report">暂无报告。</pre></section>
+</main>
+<script src="./core/output-evaluator.js"></script><script src="./evaluate.js"></script>
+</body>
+</html>

@@ -16,6 +16,7 @@ const headers = read('src/_headers');
 const index = read('src/index.html');
 const contextPack = read('src/context-pack.html');
 const agentBrief = read('src/agent-brief.html');
+const evaluator = read('src/evaluate.html');
 const wrangler = read('wrangler.jsonc');
 const sourceFiles = walk('src').filter((file) => /\.(html|js|css|svg)$/.test(file));
 const allSource = sourceFiles.map((file) => read(file)).join('\n');
@@ -33,6 +34,10 @@ const checks = [
   [contextPack.includes('./core/context-pack.js'), 'context-pack page must load core context-pack module'],
   [agentBrief.includes('Agent Brief Generator'), 'agent-brief page must contain Agent Brief Generator branding'],
   [agentBrief.includes('./core/agent-brief.js'), 'agent-brief page must load core agent-brief module'],
+  [evaluator.includes('AI Output Evaluator'), 'evaluate page must contain AI Output Evaluator branding'],
+  [evaluator.includes('./core/output-evaluator.js'), 'evaluate page must load core output-evaluator module'],
+  [index.includes('AI Forge'), 'index page must contain AI Forge branding'],
+  [read('src/app.js').includes('AI Output Evaluator'), 'homepage must link AI Output Evaluator'],
 ];
 
 const failed = checks.filter(([ok]) => !ok);
