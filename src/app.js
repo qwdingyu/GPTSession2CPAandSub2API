@@ -83,6 +83,14 @@
           <div class="local-card-desc">本地选择项目文件夹，生成目录树与关键文本内容 Markdown，方便交给 Codex、Claude Code、Cursor、Cline 等 Agent。</div>
           <span class="local-card-action">打开工具</span>
         </div>
+      </a>
+      <a class="local-card" href="./agent-brief.html" target="_self">
+        <div class="local-card-icon">🧭</div>
+        <div class="local-card-body">
+          <div class="local-card-name">Agent Brief Generator</div>
+          <div class="local-card-desc">把任务目标整理成 Agent brief、规则片段、Issue 草稿、验收标准和验证清单，避免 Agent 跑偏。</div>
+          <span class="local-card-action">打开工具</span>
+        </div>
       </a>`;
   }
 

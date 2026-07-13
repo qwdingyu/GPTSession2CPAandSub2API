@@ -15,6 +15,7 @@ function walk(dir) {
 const headers = read('src/_headers');
 const index = read('src/index.html');
 const contextPack = read('src/context-pack.html');
+const agentBrief = read('src/agent-brief.html');
 const wrangler = read('wrangler.jsonc');
 const sourceFiles = walk('src').filter((file) => /\.(html|js|css|svg)$/.test(file));
 const allSource = sourceFiles.map((file) => read(file)).join('\n');
@@ -30,6 +31,8 @@ const checks = [
   [index.includes('AI Forge'), 'index page must contain AI Forge branding'],
   [contextPack.includes('Context Pack Builder'), 'context-pack page must contain Context Pack Builder branding'],
   [contextPack.includes('./core/context-pack.js'), 'context-pack page must load core context-pack module'],
+  [agentBrief.includes('Agent Brief Generator'), 'agent-brief page must contain Agent Brief Generator branding'],
+  [agentBrief.includes('./core/agent-brief.js'), 'agent-brief page must load core agent-brief module'],
 ];
 
 const failed = checks.filter(([ok]) => !ok);

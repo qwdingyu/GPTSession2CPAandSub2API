@@ -9,6 +9,7 @@
 ## Agent 工作流工具箱
 
 - `14_ContextPackBuilder实现说明_20260714.md`：Context Pack Builder 的实现、隐私边界、过滤规则和测试说明。
+- `15_AgentBriefGenerator实现说明_20260714.md`：Agent Brief Generator 的实现、任务资产生成方式和测试说明。
 
 ## `/convert` 核心工具
 

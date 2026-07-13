@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Agent Brief Generator — AI Forge</title>
+<meta name="description" content="把任务目标整理成 Agent 可执行 brief、规则片段、验收标准和验证清单。">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./tools/agent-brief.css">
+</head>
+<body>
+<header class="nav-header"><div class="wrap"><a class="brand" href="./index.html"><span class="brand-mark">⚒</span><span class="brand-text">AI Forge</span><span class="brand-sub">— Agent Brief Generator</span></a></div></header>
+<main class="wrap brief-wrap">
+  <section class="brief-hero">
+    <p class="eyebrow">本地优先 · Agent 任务资产</p>
+    <h1>Agent Brief Generator</h1>
+    <p>把一句需求变成 Agent 可执行的任务 brief、规则片段、Issue 草稿、验收标准和验证清单。适合 Codex、Claude Code、Cursor、Cline、Windsurf 等工具。</p>
+  </section>
+
+  <section class="brief-grid">
+    <div class="brief-panel">
+      <h2>1. 输入任务</h2>
+      <label>任务标题</label><input id="brief-title" class="brief-input" value="实现一个低成本高价值功能">
+      <label>项目类型</label>
+      <select id="project-type" class="brief-input">
+        <option value="code">通用代码库</option>
+        <option value="web">Web / 前端</option>
+        <option value="worker">Cloudflare Worker</option>
+        <option value="docs">文档 / PRD</option>
+      </select>
+      <label>目标 Agent</label><input id="target-agent" class="brief-input" value="Codex / Claude Code / Cursor">
+      <label>任务目标</label><textarea id="goal" class="brief-textarea" placeholder="描述你希望 Agent 完成什么，以及为什么要做。"></textarea>
+      <label>上下文</label><textarea id="context" class="brief-textarea" placeholder="粘贴背景、关键文件路径、业务约束或 Context Pack 摘要。"></textarea>
+    </div>
+
+    <div class="brief-panel">
+      <h2>2. 约束与验收</h2>
+      <label>约束（一行一条）</label><textarea id="constraints" class="brief-textarea small" placeholder="例如：不新增依赖\n保持 connect-src none\n必须补测试"></textarea>
+      <label>交付物（一行一条）</label><textarea id="deliverables" class="brief-textarea small" placeholder="例如：代码改动\n文档说明\n验证结果"></textarea>
+      <label>验收标准（一行一条）</label><textarea id="done-criteria" class="brief-textarea small" placeholder="例如：npm test 通过\n生产页面可访问"></textarea>
+      <label>验证命令（一行一条）</label><textarea id="test-commands" class="brief-textarea small" placeholder="npm test\nnpm run check:static"></textarea>
+      <label>不做事项（一行一条）</label><textarea id="out-of-scope" class="brief-textarea small" placeholder="例如：不做在线 API 验证\n不修改无关页面"></textarea>
+      <div class="actions-row"><button class="btn-main" id="generate-brief">生成 Brief</button><button class="btn-ghost" id="clear-brief">清空</button></div>
+      <div class="status-line" id="brief-status">等待输入任务。</div>
+    </div>
+  </section>
+
+  <section class="brief-panel output-panel">
+    <div class="panel-title-row"><h2>3. 输出</h2><div class="actions-row"><button class="btn-main" id="copy-output" disabled>复制全部</button><button class="btn-ghost" id="download-output" disabled>下载 .md</button></div></div>
+    <div class="tabs"><button class="tab active" data-view="combined">完整任务包</button><button class="tab" data-view="brief">Agent Brief</button><button class="tab" data-view="rules">Rules</button><button class="tab" data-view="issue">Issue</button></div>
+    <pre id="brief-output">生成后会显示 Agent 可执行任务包。</pre>
+  </section>
+</main>
+<script src="./core/agent-brief.js"></script>
+<script src="./agent-brief.js"></script>
+</body>
+</html>
