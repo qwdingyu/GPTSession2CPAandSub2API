@@ -14,6 +14,7 @@ function walk(dir) {
 
 const headers = read('src/_headers');
 const index = read('src/index.html');
+const contextPack = read('src/context-pack.html');
 const wrangler = read('wrangler.jsonc');
 const sourceFiles = walk('src').filter((file) => /\.(html|js|css|svg)$/.test(file));
 const allSource = sourceFiles.map((file) => read(file)).join('\n');
@@ -27,6 +28,8 @@ const checks = [
   [!allSource.includes('fonts.googleapis') && !allSource.includes('fonts.gstatic'), 'site must not load Google Fonts'],
   [index.includes('https://ai.eforge.xyz/'), 'index metadata must use production domain https://ai.eforge.xyz/'],
   [index.includes('AI Forge'), 'index page must contain AI Forge branding'],
+  [contextPack.includes('Context Pack Builder'), 'context-pack page must contain Context Pack Builder branding'],
+  [contextPack.includes('./core/context-pack.js'), 'context-pack page must load core context-pack module'],
 ];
 
 const failed = checks.filter(([ok]) => !ok);

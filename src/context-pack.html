@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Context Pack Builder — AI Forge</title>
+<meta name="description" content="本地选择项目文件夹，生成可交给 AI Agent 的 Markdown 上下文包。">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any">
+<link rel="stylesheet" href="./style.css">
+<link rel="stylesheet" href="./tools/context-pack.css">
+</head>
+<body>
+<header class="nav-header">
+  <div class="wrap">
+    <a class="brand" href="./index.html"><span class="brand-mark">⚒</span><span class="brand-text">AI Forge</span><span class="brand-sub">— Context Pack Builder</span></a>
+  </div>
+</header>
+<main class="wrap context-wrap">
+  <section class="context-hero">
+    <p class="eyebrow">本地优先 · Agent 上下文打包</p>
+    <h1>Context Pack Builder</h1>
+    <p>选择本地项目文件夹，自动过滤无关文件，生成目录树 + 关键文本内容的 Markdown 上下文包，方便交给 Codex、Claude Code、Cursor、Cline 等 Agent。</p>
+  </section>
+
+  <section class="context-grid">
+    <div class="context-panel">
+      <h2>1. 选择项目</h2>
+      <p class="muted">所有文件都在浏览器本地读取，不上传服务器。默认跳过 <code>node_modules</code>、<code>.git</code>、lock 文件、图片、二进制和大文件。</p>
+      <input class="hidden" id="folder-input" type="file" multiple webkitdirectory directory>
+      <div class="actions-row">
+        <button class="btn-main" id="pick-folder">选择文件夹</button>
+        <button class="btn-ghost" id="clear-pack">清空</button>
+      </div>
+      <label class="field-label">上下文包标题</label>
+      <input class="text-input" id="pack-title" value="AI Context Pack" maxlength="80">
+      <div class="status-line" id="pack-status">等待选择文件夹。</div>
+    </div>
+
+    <div class="context-panel">
+      <h2>2. 结果摘要</h2>
+      <div class="summary-grid">
+        <div><b id="stat-files">0</b><span>包含文件</span></div>
+        <div><b id="stat-skipped">0</b><span>跳过文件</span></div>
+        <div><b id="stat-size">0 KB</b><span>文本大小</span></div>
+        <div><b id="stat-tokens">0</b><span>粗略 token</span></div>
+      </div>
+      <div class="actions-row">
+        <button class="btn-main" id="copy-pack" disabled>复制 Markdown</button>
+        <button class="btn-ghost" id="download-pack" disabled>下载 .md</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="context-panel preview-panel">
+    <div class="panel-title-row"><h2>3. Markdown 预览</h2><span id="preview-note">生成后显示前 8000 字。</span></div>
+    <pre id="pack-preview">选择文件夹后会生成上下文包。</pre>
+  </section>
+</main>
+<script src="./core/context-pack.js"></script>
+<script src="./context-pack.js"></script>
+</body>
+</html>

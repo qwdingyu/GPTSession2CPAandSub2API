@@ -75,6 +75,14 @@
           <div class="local-card-desc">将 ChatGPT 登录 session JSON 转换为 CPA、sub2api、Cockpit、9router、Codex auth 格式。纯浏览器端解析，不上传服务器。</div>
           <span class="local-card-action">打开工具</span>
         </div>
+      </a>
+      <a class="local-card" href="./context-pack.html" target="_self">
+        <div class="local-card-icon">📦</div>
+        <div class="local-card-body">
+          <div class="local-card-name">Context Pack Builder</div>
+          <div class="local-card-desc">本地选择项目文件夹，生成目录树与关键文本内容 Markdown，方便交给 Codex、Claude Code、Cursor、Cline 等 Agent。</div>
+          <span class="local-card-action">打开工具</span>
+        </div>
       </a>`;
   }
 

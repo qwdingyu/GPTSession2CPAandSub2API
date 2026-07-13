@@ -4,7 +4,7 @@
   "private": true,
   "type": "commonjs",
   "scripts": {
-    "test": "node test-converter.js",
+    "test": "node test-converter.js && node test-context-pack.js",
     "check:static": "node scripts/check-static-site.js",
     "verify:domain": "node scripts/verify-domain.js",
     "deploy": "wrangler deploy",
