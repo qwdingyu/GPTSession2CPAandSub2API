@@ -2,7 +2,7 @@
 
 ## 目标
 
-Agent Brief Generator 是 Agent 工作流工具箱的第二个 P0 工具。它不做普通 Prompt 优化，而是把用户的任务目标整理成 Agent 可执行的任务资产：brief、规则片段、Issue 草稿、验收标准和验证命令。
+Agent Brief Generator 是 Agent 工作流工具箱的第二个 P0 工具。它不做普通 Prompt 优化，而是把用户的任务目标整理成 Agent 可执行的任务资产：brief、规则片段、Issue 草稿、Agent 专用规则文件、验收标准和验证命令。
 
 ## 用户问题
 
@@ -26,6 +26,9 @@ Agent Brief Generator 是 Agent 工作流工具箱的第二个 P0 工具。它�
   - Agent Brief；
   - Agent Rules Snippet；
   - Issue 草稿；
+  - AGENTS.md；
+  - CLAUDE.md；
+  - Cursor Rules；
   - 完整任务包；
 - 支持复制和下载 Markdown；
 - 全程浏览器本地运行，不调用 API。
@@ -49,7 +52,7 @@ src/core/agent-brief.js
   |-- normalizeInput
   |-- buildAgentBrief
   |-- 项目类型 preset
-  |-- brief / rules / issue 生成
+  |-- brief / rules / issue / AGENTS.md / CLAUDE.md / Cursor Rules 生成
 ```
 
 ## 项目类型 preset
@@ -62,6 +65,16 @@ src/core/agent-brief.js
 - `docs`：文档 / PRD。
 
 每个 preset 提供默认验证命令和风险约束。
+
+## Agent 专用导出
+
+当前已支持三类高频规则文件：
+
+- `AGENTS.md`：面向 Codex / 通用 coding agent，强调目标、上下文、约束、交付物、验收和验证证据；
+- `CLAUDE.md`：面向 Claude Code，强调项目上下文、规则、完成条件和验证命令；
+- `Cursor Rules`：面向 Cursor，可复制到项目规则文件或团队规则片段。
+
+这些导出复用同一批输入和 preset 结果，避免多个 Agent 配置文件之间语义漂移。
 
 ## 隐私与安全边界
 
@@ -97,6 +110,7 @@ src/core/agent-brief.js
 - 验证命令；
 - rules snippet；
 - issue draft；
+- AGENTS.md / CLAUDE.md / Cursor Rules 专用导出；
 - combined 输出；
 - 未知项目类型 fallback。
 
@@ -104,7 +118,6 @@ src/core/agent-brief.js
 
 低成本高价值后续项：
 
-1. 增加 Agent 专用导出：`AGENTS.md`、`CLAUDE.md`、Cursor Rules；
-2. 与 Context Pack Builder 联动，允许把上下文摘要粘贴进 brief；
-3. 增加“PRD / Issue / Test Spec”三种输出模板；
-4. 增加本地历史记录和收藏，但必须只用 localStorage。
+1. 与 Context Pack Builder 联动，允许把上下文摘要粘贴进 brief；
+2. 增加“PRD / Issue / Test Spec”三种输出模板；
+3. 增加本地历史记录和收藏，但必须只用 localStorage。

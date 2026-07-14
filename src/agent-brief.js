@@ -48,6 +48,11 @@
     return state.result[state.view] || state.result.combined;
   }
 
+  function downloadName() {
+    var names = { agentsMd: 'AGENTS.md', claudeMd: 'CLAUDE.md', cursorRules: 'cursor-rules.md', issue: 'agent-issue.md', rules: 'agent-rules.md', brief: 'agent-brief.md', combined: 'agent-task-pack.md' };
+    return names[state.view] || 'agent-brief.md';
+  }
+
   function render() {
     var text = currentText();
     E.output.textContent = text || '生成后会显示 Agent 可执行任务包。';
@@ -100,6 +105,6 @@
   E.download.addEventListener('click', function () {
     var text = currentText();
     if (!text) return;
-    downloadText(text, 'agent-brief.md');
+    downloadText(text, downloadName());
   });
 })();

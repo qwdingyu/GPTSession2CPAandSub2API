@@ -13,6 +13,7 @@ var AgentBrief;
   function lines(value) { return text(value).split('\n').map(function (line) { return line.trim(); }).filter(Boolean); }
   function bullet(items) { return items.map(function (item) { return '- ' + item; }).join('\n'); }
   function numbered(items) { return items.map(function (item, index) { return (index + 1) + '. ' + item; }).join('\n'); }
+  function commandList(items) { return items.map(function (cmd) { return '- `' + cmd + '`'; }).join('\n'); }
 
   function normalizeInput(input) {
     var source = input || {};
@@ -84,7 +85,7 @@ var AgentBrief;
       bullet(doneCriteria),
       '',
       '## 建议验证命令',
-      bullet(testCommands.map(function (cmd) { return '`' + cmd + '`'; })),
+      commandList(testCommands),
       '',
       '## 不做事项',
       bullet(outOfScope),
@@ -102,6 +103,88 @@ var AgentBrief;
       ''
     ].join('\n');
 
+    var agentsMd = [
+      '# AGENTS.md',
+      '',
+      '## Role & Intent',
+      'You are an autonomous coding agent working on: ' + input.title + '.',
+      '',
+      '## Objective',
+      input.goal || 'Complete the requested task using repository evidence.',
+      '',
+      '## Context',
+      input.context || 'Read the relevant files before changing code.',
+      '',
+      '## Operating Constraints',
+      bullet(constraints),
+      '',
+      '## Deliverables',
+      bullet(deliverables),
+      '',
+      '## Acceptance Criteria',
+      bullet(doneCriteria),
+      '',
+      '## Verification Commands',
+      commandList(testCommands),
+      '',
+      '## Out of Scope',
+      bullet(outOfScope),
+      '',
+      '## Completion Report',
+      '- Summarize changed files.',
+      '- Include exact validation evidence.',
+      '- State known risks or untested gaps.',
+      ''
+    ].join('\n');
+
+    var claudeMd = [
+      '# CLAUDE.md',
+      '',
+      '## Task',
+      input.title,
+      '',
+      '## Goal',
+      input.goal || 'Complete the requested task using local project context.',
+      '',
+      '## Project Context',
+      input.context || 'Inspect the repository before making changes.',
+      '',
+      '## Rules',
+      bullet(constraints.concat(['Do not claim completion without validation evidence.', 'Separate verified facts from assumptions.'])),
+      '',
+      '## Deliverables',
+      bullet(deliverables),
+      '',
+      '## Done When',
+      bullet(doneCriteria),
+      '',
+      '## Validate With',
+      commandList(testCommands),
+      ''
+    ].join('\n');
+
+    var cursorRules = [
+      '# Cursor Rules',
+      '',
+      'You are working on: ' + input.title + '.',
+      '',
+      'Goal:',
+      input.goal || 'Complete the requested task safely and verifiably.',
+      '',
+      'Rules:',
+      bullet(constraints),
+      '',
+      'Expected outputs:',
+      bullet(deliverables),
+      '',
+      'Definition of done:',
+      bullet(doneCriteria),
+      '',
+      'Validation commands:',
+      commandList(testCommands),
+      ''
+    ].join('\n');
+
     var issue = [
       '## Issue: ' + input.title,
       '',
@@ -112,12 +195,13 @@ var AgentBrief;
       bullet(doneCriteria),
       '',
       '### Validation',
-      bullet(testCommands.map(function (cmd) { return '`' + cmd + '`'; })),
+      commandList(testCommands),
       ''
     ].join('\n');
 
     // 中文注释：这里生成的是可执行任务资产，而不是普通 prompt，避免回到同质化 Prompt 模板库。
-    return { input: input, brief: brief, rules: rules, issue: issue, combined: brief + '\n---\n\n' + rules + '\n---\n\n' + issue };
+    // 中文注释：AGENTS/CLAUDE/Cursor 导出复用同一批约束和验收标准，避免多个 Agent 配置文件之间语义漂移。
+    return { input: input, brief: brief, rules: rules, issue: issue, agentsMd: agentsMd, claudeMd: claudeMd, cursorRules: cursorRules, combined: brief + '\n---\n\n' + rules + '\n---\n\n' + issue + '\n---\n\n' + agentsMd + '\n---\n\n' + claudeMd + '\n---\n\n' + cursorRules };
   }
 
   AgentBrief.normalizeInput = normalizeInput;

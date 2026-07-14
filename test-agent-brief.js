@@ -30,6 +30,10 @@ assert(result.brief.includes('保持 connect-src none'), 'custom constraint incl
 assert(result.brief.includes('`npm test`'), 'test command included');
 assert(result.rules.includes('Agent Rules Snippet'), 'rules snippet generated');
 assert(result.issue.includes('Acceptance Criteria'), 'issue draft generated');
+assert(result.agentsMd.includes('# AGENTS.md'), 'AGENTS.md export generated');
+assert(result.agentsMd.includes('保持 connect-src none'), 'AGENTS.md export keeps constraints');
+assert(result.claudeMd.includes('# CLAUDE.md'), 'CLAUDE.md export generated');
+assert(result.cursorRules.includes('# Cursor Rules'), 'Cursor Rules export generated');
 assert(result.combined.includes('---'), 'combined output separates sections');
 
 const normalized = AgentBrief.normalizeInput({ projectType: 'unknown', goal: 'x' });

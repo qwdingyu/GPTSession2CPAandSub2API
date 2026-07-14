@@ -35,6 +35,7 @@ const checks = [
   [contextPack.includes('./core/context-pack.js'), 'context-pack page must load core context-pack module'],
   [agentBrief.includes('Agent Brief Generator'), 'agent-brief page must contain Agent Brief Generator branding'],
   [agentBrief.includes('./core/agent-brief.js'), 'agent-brief page must load core agent-brief module'],
+  [agentBrief.includes('AGENTS.md') && agentBrief.includes('CLAUDE.md') && agentBrief.includes('Cursor Rules'), 'agent-brief page must expose agent-specific exports'],
   [evaluator.includes('AI Output Evaluator'), 'evaluate page must contain AI Output Evaluator branding'],
   [evaluator.includes('./core/output-evaluator.js'), 'evaluate page must load core output-evaluator module'],
   [workflow.includes('Prompt-to-Workflow Builder'), 'workflow page must contain Prompt-to-Workflow Builder branding'],
