@@ -1,0 +1,15 @@
+(function () {
+  'use strict';
+  var state = { result: null, view: 'combined' };
+  var E = { title: document.querySelector('#workflow-title'), domain: document.querySelector('#workflow-domain'), request: document.querySelector('#workflow-request'), trigger: document.querySelector('#workflow-trigger'), inputs: document.querySelector('#workflow-inputs'), constraints: document.querySelector('#workflow-constraints'), outputs: document.querySelector('#workflow-outputs'), gates: document.querySelector('#workflow-gates'), build: document.querySelector('#build-workflow'), clear: document.querySelector('#clear-workflow'), status: document.querySelector('#workflow-status'), output: document.querySelector('#workflow-output'), copy: document.querySelector('#copy-workflow'), download: document.querySelector('#download-workflow'), tabs: Array.from(document.querySelectorAll('.tab')) };
+  function setStatus(text, tone) { E.status.textContent = text; E.status.classList.toggle('ok', tone === 'ok'); E.status.classList.toggle('err', tone === 'error'); }
+  function collectInput() { return { title: E.title.value, domain: E.domain.value, request: E.request.value, trigger: E.trigger.value, inputs: E.inputs.value, constraints: E.constraints.value, outputs: E.outputs.value, gates: E.gates.value }; }
+  function currentText() { return state.result ? state.result[state.view] : ''; }
+  function render() { var text = currentText(); E.output.textContent = text || '填写需求后生成可复用工作流资产。'; E.copy.disabled = !text; E.download.disabled = !text; }
+  function downloadText(text, name) { var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type: 'text/markdown;charset=utf-8' })); a.download = name; document.body.appendChild(a); a.click(); document.body.removeChild(a); setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000); }
+  E.build.addEventListener('click', function () { if (!E.request.value.trim()) { setStatus('请先粘贴原始需求。', 'error'); return; } state.result = WorkflowBuilder.buildWorkflow(collectInput()); state.view = 'combined'; E.tabs.forEach(function (tab) { tab.classList.toggle('active', tab.dataset.view === state.view); }); render(); setStatus('已生成本地工作流资产。', 'ok'); });
+  E.clear.addEventListener('click', function () { E.request.value = ''; E.trigger.value = ''; E.inputs.value = ''; E.constraints.value = ''; E.outputs.value = ''; E.gates.value = ''; state.result = null; render(); setStatus('等待输入需求。'); });
+  E.tabs.forEach(function (tab) { tab.addEventListener('click', function () { state.view = tab.dataset.view; E.tabs.forEach(function (item) { item.classList.toggle('active', item === tab); }); render(); }); });
+  E.copy.addEventListener('click', async function () { var text = currentText(); if (!text) return; try { await navigator.clipboard.writeText(text); setStatus('已复制当前内容。', 'ok'); } catch { setStatus('复制失败，请改用下载。', 'error'); } });
+  E.download.addEventListener('click', function () { var text = currentText(); if (text) downloadText(text, 'agent-workflow.md'); });
+})();

@@ -11,6 +11,7 @@
 - `14_ContextPackBuilder实现说明_20260714.md`：Context Pack Builder 的实现、隐私边界、过滤规则和测试说明。
 - `15_AgentBriefGenerator实现说明_20260714.md`：Agent Brief Generator 的实现、任务资产生成方式和测试说明。
 - `16_AIOutputEvaluator实现说明_20260714.md`：AI Output Evaluator 的实现、启发式评估边界、中文需求匹配和测试说明。
+- `17_PromptToWorkflowBuilder实现说明_20260714.md`：Prompt-to-Workflow Builder 的实现、流程资产化边界、preset 和测试说明。
 
 ## `/convert` 核心工具
 

@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Prompt-to-Workflow Builder — AI Forge</title>
+<meta name="description" content="把一次性自然语言需求转换为可复用 Agent 工作流、检查清单和 Skill 草稿。纯浏览器本地处理，不上传内容。">
+<link rel="icon" href="./favicon.svg" type="image/svg+xml" sizes="any">
+<link rel="stylesheet" href="./style.css"><link rel="stylesheet" href="./tools/workflow.css">
+</head>
+<body>
+<header class="nav-header"><div class="wrap"><a class="brand" href="./index.html"><span class="brand-mark">⚒</span><span class="brand-text">AI Forge</span><span class="brand-sub">— Prompt-to-Workflow Builder</span></a></div></header>
+<main class="wrap workflow-wrap">
+  <section class="workflow-hero"><p class="eyebrow">本地优先 · Agent 工作流资产</p><h1>Prompt-to-Workflow Builder</h1><p>把一次性需求抽象为可复用工作流：触发条件、输入、约束、执行步骤、输出物和质量门禁。不会上传内容，也不调用模型。</p></section>
+  <section class="workflow-grid">
+    <div class="workflow-panel"><h2>1. 输入需求</h2><label>工作流标题</label><input id="workflow-title" class="workflow-input" value="把需求变成可执行 Agent 工作流"><label>任务类型</label><select id="workflow-domain" class="workflow-input"><option value="code">代码 / 工程任务</option><option value="docs">文档 / PRD 任务</option><option value="ops">部署 / 运维任务</option><option value="research">调研 / 选型任务</option></select><label>原始需求</label><textarea id="workflow-request" class="workflow-textarea large" placeholder="粘贴用户最初给 Agent 的自然语言需求。"></textarea><label>触发条件（可选）</label><textarea id="workflow-trigger" class="workflow-textarea small" placeholder="什么时候应该使用这个流程？留空则自动生成。"></textarea><label>已知输入（一行一条，可选）</label><textarea id="workflow-inputs" class="workflow-textarea small" placeholder="例如：目标仓库路径
+生产域名
+验收标准"></textarea><label>硬约束（一行一条，可选）</label><textarea id="workflow-constraints" class="workflow-textarea small" placeholder="例如：不新增依赖
+保持 connect-src none
+必须验证生产域名"></textarea><label>输出物（一行一条，可选）</label><textarea id="workflow-outputs" class="workflow-textarea small" placeholder="例如：PRD
+测试清单
+部署说明"></textarea><label>质量门禁（一行一条，可选）</label><textarea id="workflow-gates" class="workflow-textarea small" placeholder="例如：npm test 通过
+GitHub Actions 成功"></textarea><div class="actions-row"><button class="btn-main" id="build-workflow">生成工作流</button><button class="btn-ghost" id="clear-workflow">清空</button></div><div class="status-line" id="workflow-status">等待输入需求。</div></div>
+    <div class="workflow-panel output-panel"><div class="panel-title-row"><h2>2. 输出</h2><div class="actions-row compact"><button class="btn-main" id="copy-workflow" disabled>复制</button><button class="btn-ghost" id="download-workflow" disabled>下载 .md</button></div></div><div class="tabs"><button class="tab active" data-view="combined">全部</button><button class="tab" data-view="workflow">工作流</button><button class="tab" data-view="checklist">Checklist</button><button class="tab" data-view="skillDraft">Skill 草稿</button></div><pre id="workflow-output">填写需求后生成可复用工作流资产。</pre></div>
+  </section>
+</main>
+<script src="./core/workflow-builder.js"></script><script src="./workflow.js"></script>
+</body>
+</html>

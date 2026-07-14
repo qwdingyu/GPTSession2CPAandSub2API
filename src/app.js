@@ -99,6 +99,14 @@
           <div class="local-card-desc">本地评估 Agent 输出是否覆盖需求、包含验证证据、说明剩余风险，帮助判断结果能否采纳。</div>
           <span class="local-card-action">打开工具</span>
         </div>
+      </a>
+      <a class="local-card" href="./workflow.html" target="_self">
+        <div class="local-card-icon">🧩</div>
+        <div class="local-card-body">
+          <div class="local-card-name">Prompt-to-Workflow Builder</div>
+          <div class="local-card-desc">把一次性需求抽象成可复用 Agent 工作流、检查清单和 Skill 草稿，避免只停留在 prompt 美化。</div>
+          <span class="local-card-action">打开工具</span>
+        </div>
       </a>`;
   }
 

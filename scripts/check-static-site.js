@@ -17,6 +17,7 @@ const index = read('src/index.html');
 const contextPack = read('src/context-pack.html');
 const agentBrief = read('src/agent-brief.html');
 const evaluator = read('src/evaluate.html');
+const workflow = read('src/workflow.html');
 const wrangler = read('wrangler.jsonc');
 const sourceFiles = walk('src').filter((file) => /\.(html|js|css|svg)$/.test(file));
 const allSource = sourceFiles.map((file) => read(file)).join('\n');
@@ -36,8 +37,11 @@ const checks = [
   [agentBrief.includes('./core/agent-brief.js'), 'agent-brief page must load core agent-brief module'],
   [evaluator.includes('AI Output Evaluator'), 'evaluate page must contain AI Output Evaluator branding'],
   [evaluator.includes('./core/output-evaluator.js'), 'evaluate page must load core output-evaluator module'],
+  [workflow.includes('Prompt-to-Workflow Builder'), 'workflow page must contain Prompt-to-Workflow Builder branding'],
+  [workflow.includes('./core/workflow-builder.js'), 'workflow page must load core workflow-builder module'],
   [index.includes('AI Forge'), 'index page must contain AI Forge branding'],
   [read('src/app.js').includes('AI Output Evaluator'), 'homepage must link AI Output Evaluator'],
+  [read('src/app.js').includes('Prompt-to-Workflow Builder'), 'homepage must link Prompt-to-Workflow Builder'],
 ];
 
 const failed = checks.filter(([ok]) => !ok);
